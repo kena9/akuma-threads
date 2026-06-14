@@ -1,8 +1,10 @@
 name: Deploy to AWS Elastic Beanstalk
 
 on:
-  push:
-    branches: [ main ]
+  workflow_dispatch:
+    # Trigger this workflow manually from the GitHub Actions UI.
+    # Go to: GitHub repo → Actions tab → "Deploy to AWS Elastic Beanstalk" → Run workflow
+    # This prevents accidental deploys on every push while AWS secrets are not yet configured.
 
 jobs:
   deploy:

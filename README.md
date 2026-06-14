@@ -132,14 +132,55 @@ src/main/java/com/akumathreads/
 Production environment runs on:
 - **AWS Elastic Beanstalk** — Java 21 platform
 - **AWS RDS** — MySQL 8.0 (db.t3.micro)
-- **AWS S3** — Product image storage
 
-Environment variables configured in Elastic Beanstalk console:
-```
-DB_URL, DB_USERNAME, DB_PASSWORD
+### Prerequisites
+
+1. AWS account with an IAM user that has `ElasticBeanstalkFullAccess` and `AmazonRDSFullAccess`
+2. Elastic Beanstalk application named `akuma-threads` with environment `akuma-threads-prod` (Java 21 platform)
+3. RDS MySQL 8 instance (endpoint, username, password)
+4. GitHub repository secrets (Settings → Secrets → Actions):
+   - `AWS_ACCESS_KEY_ID`
+   - `AWS_SECRET_ACCESS_KEY`
+
+### Environment Variables (Elastic Beanstalk Console)
+
+In the EB console → Configuration → Environment properties, set:
+
+| Key | Example value |
+|---|---|
+| `SPRING_PROFILES_ACTIVE` | `prod` |
+| `DB_URL` | `jdbc:mysql://your-rds-endpoint:3306/akuma_threads?useSSL=true&serverTimezone=UTC` |
+| `DB_USERNAME` | `admin` |
+| `DB_PASSWORD` | `your-rds-password` |
+
+### Deploy Steps
+
+```bash
+# 1. Ensure all tests pass locally
+./mvnw test
+
+# 2. Build the production JAR
+./mvnw package -DskipTests -B
+
+# 3. Push to main — deploy does NOT auto-trigger on push
+git push origin main
+
+# 4. Trigger deployment manually
+# GitHub → repo → Actions → "Deploy to AWS Elastic Beanstalk" → Run workflow
 ```
 
-Active profile: `spring.profiles.active=prod`
+> The GitHub Actions workflow (`.github/workflows/deploy.yml`) is set to `workflow_dispatch`,
+> meaning it only runs when you manually click "Run workflow" in the GitHub Actions UI.
+> This prevents accidental production deploys while AWS credentials are being configured.
+
+### First Deploy Checklist
+
+- [ ] RDS instance is publicly accessible or in the same VPC as EB
+- [ ] Security group allows EB → RDS on port 3306
+- [ ] `spring.jpa.hibernate.ddl-auto=validate` in `application-prod.properties` (schema must pre-exist)
+- [ ] Run schema migration manually on RDS before first deploy:
+  `./mvnw spring-boot:run -Dspring.profiles.active=dev` locally then export schema
+- [ ] Confirm environment variable `SPRING_PROFILES_ACTIVE=prod` is set in EB console
 
 ---
 

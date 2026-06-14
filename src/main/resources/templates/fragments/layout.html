@@ -12,6 +12,7 @@
 <head th:fragment="head(title)">
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <!-- CSP is enforced by Spring Security SecurityConfig — this meta tag is a belt-and-suspenders hint for browsers that read it before the HTTP header. -->
     <meta http-equiv="Content-Security-Policy"
           content="default-src 'self'; script-src 'self' https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; frame-ancestors 'none'; form-action 'self'"/>
 
@@ -106,9 +107,9 @@
                 </a>
             </li>
             <li sec:authorize="isAuthenticated()">
-                <a th:href="@{/orders}"
+                <a th:href="@{/account/orders}"
                    class="font-mono text-[11px] font-bold tracking-[0.2em] uppercase text-[#555] hover:text-white transition-colors duration-200">
-                    Orders
+                    My Orders
                 </a>
             </li>
             <li sec:authorize="hasRole('ADMIN')">
@@ -175,4 +176,44 @@
             <span style="font-family:'Pinyon Script',cursive; font-size:1.5rem; color:#333; line-height:1;">
                 Olly Threads
             </span>
-            <p class="font-mono text-[10px]
+            <p class="font-mono text-[10px] text-[#333] tracking-[0.2em] uppercase">
+                © 2026 — Original Anime Artist Clothing by @oliver_jin_wang
+            </p>
+        </div>
+        <!-- Legal links -->
+        <div class="flex flex-wrap items-center justify-center sm:justify-end gap-6 border-t border-[#111] pt-4">
+            <a th:href="@{/privacy-policy}"
+               class="font-mono text-[9px] tracking-[0.2em] uppercase text-[#333] hover:text-[#555] transition-colors duration-200">
+                Privacy Policy
+            </a>
+            <a th:href="@{/terms-of-service}"
+               class="font-mono text-[9px] tracking-[0.2em] uppercase text-[#333] hover:text-[#555] transition-colors duration-200">
+                Terms of Service
+            </a>
+            <a th:href="@{/refund-and-shipping}"
+               class="font-mono text-[9px] tracking-[0.2em] uppercase text-[#333] hover:text-[#555] transition-colors duration-200">
+                Refund &amp; Shipping
+            </a>
+        </div>
+    </div>
+</footer>
+
+<!--
+  ============================================================
+  THEME TOGGLE SCRIPT
+  ============================================================
+-->
+<script th:fragment="themeScript">
+    function toggleDark() {
+        var html = document.documentElement;
+        if (html.classList.contains('dark')) {
+            html.classList.remove('dark');
+            localStorage.setItem('olly-theme', 'light');
+        } else {
+            html.classList.add('dark');
+            localStorage.setItem('olly-theme', 'dark');
+        }
+    }
+</script>
+
+</html>

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      class="dark">
+
+<head th:replace="~{fragments/layout :: head('My Orders')}"></head>
+
+<body class="bg-[#0a0a0a] text-white min-h-screen flex flex-col">
+
+<div th:replace="~{fragments/layout :: navbar}"></div>
+
+<main class="flex-1 max-w-5xl mx-auto w-full px-6 sm:px-10 py-14">
+
+    <!-- ── Page header ──────────────────────────────────────────────────────── -->
+    <div class="mb-12 border-b border-[#1a1a1a] pb-8">
+        <p class="font-mono text-[10px] tracking-[0.35em] uppercase text-[#e50914] mb-3">
+            Account
+        </p>
+        <h1 style="font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+                   font-size: clamp(2.5rem, 6vw, 4.5rem);
+                   line-height: 0.9;
+                   letter-spacing: -0.02em;">
+            MY ORDERS
+        </h1>
+    </div>
+
+    <!-- ── Empty state ──────────────────────────────────────────────────────── -->
+    <div th:if="${#lists.isEmpty(orders)}"
+         class="flex flex-col items-center justify-center py-24 text-center">
+        <!-- Ghost icon -->
+        <div class="border border-[#1a1a1a] w-24 h-24 flex items-center justify-center mb-8">
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none" class="opacity-20">
+                <rect x="1" y="1" width="38" height="38" stroke="white" stroke-width="2"/>
+                <line x1="1" y1="1" x2="39" y2="39" stroke="white" stroke-width="2"/>
+                <line x1="39" y1="1" x2="1" y2="39" stroke="white" stroke-width="2"/>
+            </svg>
+        </div>
+        <p style="font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+                  font-size: 1.6rem;
+                  letter-spacing: 0.02em;"
+           class="text-white uppercase mb-3">NO ORDERS YET</p>
+        <p class="font-mono text-[11px] text-[#444] tracking-[0.1em] mb-8">
+            When you place an order, it will appear here.
+        </p>
+        <a th:href="@{/shop}"
+           class="font-mono text-[11px] tracking-[0.25em] uppercase font-bold
+                  bg-[#e50914] text-white px-10 py-4
+                  hover:bg-[#b8070f] transition-colors duration-200">
+            START SHOPPING
+        </a>
+    </div>
+
+    <!-- ── Order list ───────────────────────────────────────────────────────── -->
+    <div th:unless="${#lists.isEmpty(orders)}" class="space-y-8">
+        <div th:each="order : ${orders}"
+             class="border border-[#1a1a1a] hover:border-[#333] transition-colors duration-200">
+
+            <!-- Order card header -->
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between
+                        gap-4 px-6 py-5 border-b border-[#1a1a1a] bg-[#0d0d0d]">
+
+                <div class="flex items-center gap-6 flex-wrap">
+                    <!-- Order # -->
+                    <div>
+                        <p class="font-mono text-[9px] tracking-[0.25em] uppercase text-[#444] mb-1">ORDER</p>
+                        <p style="font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+                                  font-size: 1.1rem;
+                                  letter-spacing: 0.05em;
+                                  color: #e50914;">
+                            #<span th:text="${order.id}">0</span>
+                        </p>
+                    </div>
+
+                    <!-- Date -->
+                    <div>
+                        <p class="font-mono text-[9px] tracking-[0.25em] uppercase text-[#444] mb-1">DATE</p>
+                        <p class="font-mono text-[11px] text-white"
+                           th:text="${#temporals.format(order.createdAt, 'MMM d, yyyy')}">
+                            Jun 1, 2025
+                        </p>
+                    </div>
+
+                    <!-- Total -->
+                    <div>
+                        <p class="font-mono text-[9px] tracking-[0.25em] uppercase text-[#444] mb-1">TOTAL</p>
+                        <p class="font-mono text-[13px] font-bold text-white"
+                           th:text="'$' + ${#numbers.formatDecimal(order.total, 1, 2)}">$0.00</p>
+                    </div>
+                </div>
+
+                <!-- Status badge -->
+                <div class="flex items-center gap-4">
+                    <span class="font-mono text-[9px] tracking-[0.25em] uppercase font-bold px-3 py-1.5"
+                          th:classappend="${order.status.name() == 'PENDING'}    ? 'border border-[#444] text-[#888]' :
+                                          (${order.status.name() == 'PROCESSING'} ? 'border border-[#e5a009] text-[#e5a009]' :
+                                          (${order.status.name() == 'SHIPPED'}    ? 'border border-[#4a9eff] text-[#4a9eff]' :
+                                          (${order.status.name() == 'DELIVERED'}  ? 'border border-[#22c55e] text-[#22c55e]' :
+                                                                                    'border border-[#e50914] text-[#e50914]')))"
+                          th:text="${order.status.name()}">
+                        STATUS
+                    </span>
+
+                    <!-- View detail link (only visible for PENDING orders to encourage cancellation, or always) -->
+                    <a th:href="@{/order/{id}/confirmation(id=${order.id})}"
+                       class="font-mono text-[9px] tracking-[0.2em] uppercase text-[#444]
+                              hover:text-white transition-colors duration-200">
+                        DETAILS →
+                    </a>
+                </div>
+            </div>
+
+            <!-- Order items preview (collapsed summary) -->
+            <div class="px-6 py-5">
+                <div th:each="item, iterStat : ${order.items}"
+                     th:if="${iterStat.index < 3}"
+                     class="flex items-center justify-between py-2
+                            border-b border-[#111] last:border-0">
+                    <div class="flex items-center gap-3">
+                        <p class="font-mono text-[11px] text-white uppercase tracking-[0.05em]"
+                           th:text="${item.variant.product.name}">Product</p>
+                        <span class="font-mono text-[9px] text-[#333] tracking-[0.2em] uppercase border border-[#1a1a1a] px-2 py-0.5"
+                              th:text="${item.variant.size.name()}">M</span>
+                        <span class="font-mono text-[9px] text-[#333] tracking-[0.15em]">
+                            × <span th:text="${item.quantity}">1</span>
+                        </span>
+                    </div>
+                    <p class="font-mono text-[11px] text-[#555]"
+                       th:text="'$' + ${#numbers.formatDecimal(item.unitPrice.multiply(T(java.math.BigDecimal).valueOf(item.quantity)), 1, 2)}">
+                        $0.00
+                    </p>
+                </div>
+
+                <!-- Overflow label if more than 3 items -->
+                <p th:if="${order.items.size() > 3}"
+                   class="font-mono text-[9px] text-[#333] tracking-[0.15em] uppercase mt-3">
+                    + <span th:text="${order.items.size() - 3}">0</span> more item(s)
+                </p>
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+<div th:replace="~{fragments/layout :: themeScript}"></div>
+
+</body>
+</html>

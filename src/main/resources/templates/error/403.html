@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      class="dark">
+
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>403 — Olly Threads</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
+    <link href="https://fonts.googleapis.com/css2?family=Pinyon+Script&display=swap" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' };
+        (function () {
+            var saved = localStorage.getItem('olly-theme');
+            var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (saved === 'dark' || (!saved && prefersDark)) {
+                document.documentElement.classList.add('dark');
+            }
+        })();
+    </script>
+</head>
+
+<body class="bg-[#0a0a0a] text-white min-h-screen flex flex-col items-center justify-center px-6">
+
+    <div class="text-center max-w-xl">
+
+        <!-- Error code — huge -->
+        <p style="font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+                  font-size: clamp(6rem, 20vw, 12rem);
+                  line-height: 0.85;
+                  letter-spacing: -0.04em;
+                  color: #1a1a1a;"
+           class="select-none">403</p>
+
+        <div class="w-8 h-px bg-[#e50914] mx-auto my-8"></div>
+
+        <p style="font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+                  font-size: clamp(1.5rem, 5vw, 2.5rem);
+                  letter-spacing: 0.02em;"
+           class="text-white uppercase mb-4">
+            ACCESS DENIED
+        </p>
+
+        <p class="font-mono text-[11px] text-[#444] tracking-[0.15em] leading-relaxed mb-10">
+            You don't have permission to view this page.<br>
+            If you think this is a mistake, try logging in.
+        </p>
+
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <a href="/login"
+               class="font-mono text-[11px] tracking-[0.25em] uppercase font-bold
+                      bg-[#e50914] text-white px-10 py-4
+                      hover:bg-[#b8070f] transition-colors duration-200">
+                LOG IN
+            </a>
+            <a href="/"
+               class="font-mono text-[11px] tracking-[0.25em] uppercase font-bold
+                      border border-[#222] text-[#555] px-10 py-4
+                      hover:border-white hover:text-white transition-colors duration-200">
+                GO HOME
+            </a>
+        </div>
+
+        <!-- Brand signature -->
+        <p style="font-family:'Pinyon Script',cursive; font-size:1.3rem; color:#1a1a1a; line-height:1;"
+           class="mt-16 select-none">
+            Olly Threads
+        </p>
+    </div>
+
+</body>
+</html>

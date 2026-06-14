@@ -8,6 +8,8 @@ import com.akumathreads.repository.ProductSpecification;
 import com.akumathreads.repository.ProductVariantRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -108,6 +110,7 @@ public class ProductService {
      * @param pageable  page, size (12), and sort direction from the request
      * @return one page of matching active products
      */
+    @Cacheable(value = "products", key = "#keyword + '_' + #category + '_' + #minPrice + '_' + #maxPrice + '_' + #pageable.pageNumber + '_' + #pageable.sort")
     public Page<Product> findFiltered(String keyword,
                                       Product.Category category,
                                       BigDecimal minPrice,
@@ -141,6 +144,7 @@ public class ProductService {
      * @param productId PK of the product to soft-delete
      * @throws EntityNotFoundException if no product with the given ID exists
      */
+    @CacheEvict(value = "products", allEntries = true)
     @Transactional(readOnly = false, rollbackFor = Exception.class)
     public void softDeleteProduct(Long productId) {
         Product product = productRepository.findById(productId)
@@ -168,4 +172,133 @@ public class ProductService {
      * @param productId PK of the product to toggle
      * @throws EntityNotFoundException if the product does not exist
      */
-    @Transactional(readOnly = false, rollbackFor = Except
+    @CacheEvict(value = "products", allEntries = true)
+    @Transactional(readOnly = false, rollbackFor = Exception.class)
+    public void toggleActive(Long productId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new EntityNotFoundException("Product not found: " + productId));
+        product.setActive(!product.isActive());
+        productRepository.save(product);
+    }
+
+    /**
+     * Creates or updates a product and upserts its per-size stock variants from a
+     * flat admin form DTO.
+     *
+     * <p>New products are created with {@code active = true}; existing products preserve
+     * their current active state. For each of the six standard sizes (XS–XXL), the method
+     * finds an existing {@link ProductVariant} or creates one, then sets its stock quantity
+     * from the DTO.
+     *
+     * @param form the validated product form DTO
+     * @return the saved {@link Product}
+     */
+    @CacheEvict(value = "products", allEntries = true)
+    @Transactional(readOnly = false, rollbackFor = Exception.class)
+    public Product saveProductWithVariants(ProductFormDto form) {
+        Product product;
+        if (form.getId() != null) {
+            product = productRepository.findByIdWithVariants(form.getId())
+                    .orElseThrow(() -> new EntityNotFoundException(
+                            "Product not found: " + form.getId()));
+        } else {
+            product = new Product();
+            product.setActive(true);
+        }
+
+        product.setName(form.getName());
+        product.setPrice(form.getPrice());
+        product.setDescription(form.getDescription());
+        product.setCategory(form.getCategory());
+        product.setImageUrl(form.getImageUrl());
+
+        // Save first to ensure the product has an ID before variant upsert
+        product = productRepository.save(product);
+
+        // Build size → qty map from the flat DTO fields
+        Map<ProductVariant.Size, Integer> sizeQty = new EnumMap<>(ProductVariant.Size.class);
+        sizeQty.put(ProductVariant.Size.XS,  coerce(form.getStockXs()));
+        sizeQty.put(ProductVariant.Size.S,   coerce(form.getStockS()));
+        sizeQty.put(ProductVariant.Size.M,   coerce(form.getStockM()));
+        sizeQty.put(ProductVariant.Size.L,   coerce(form.getStockL()));
+        sizeQty.put(ProductVariant.Size.XL,  coerce(form.getStockXl()));
+        sizeQty.put(ProductVariant.Size.XXL, coerce(form.getStockXxl()));
+
+        // Fetch existing variants for this product and key by size
+        Map<ProductVariant.Size, ProductVariant> existingBySize = variantRepository
+                .findByProductId(product.getId())
+                .stream()
+                .collect(Collectors.toMap(ProductVariant::getSize, v -> v));
+
+        // Upsert: update if exists, create if not
+        for (Map.Entry<ProductVariant.Size, Integer> entry : sizeQty.entrySet()) {
+            ProductVariant variant = existingBySize.getOrDefault(entry.getKey(), null);
+            if (variant == null) {
+                variant = new ProductVariant();
+                variant.setProduct(product);
+                variant.setSize(entry.getKey());
+            }
+            variant.setStockQty(entry.getValue());
+            variantRepository.save(variant);
+        }
+
+        return product;
+    }
+
+    /**
+     * Converts a {@link Product} (with variants pre-loaded) to a flat {@link ProductFormDto}
+     * for populating the admin edit form.
+     *
+     * @param product the product entity with variants eagerly loaded
+     * @return a populated DTO ready for Thymeleaf form binding
+     */
+    public ProductFormDto toFormDto(Product product) {
+        ProductFormDto dto = new ProductFormDto();
+        dto.setId(product.getId());
+        dto.setName(product.getName());
+        dto.setPrice(product.getPrice());
+        dto.setDescription(product.getDescription());
+        dto.setCategory(product.getCategory());
+        dto.setImageUrl(product.getImageUrl());
+
+        if (product.getVariants() != null) {
+            Map<ProductVariant.Size, Integer> stockMap = product.getVariants().stream()
+                    .collect(Collectors.toMap(ProductVariant::getSize, ProductVariant::getStockQty));
+            dto.setStockXs( stockMap.getOrDefault(ProductVariant.Size.XS,  0));
+            dto.setStockS(  stockMap.getOrDefault(ProductVariant.Size.S,   0));
+            dto.setStockM(  stockMap.getOrDefault(ProductVariant.Size.M,   0));
+            dto.setStockL(  stockMap.getOrDefault(ProductVariant.Size.L,   0));
+            dto.setStockXl( stockMap.getOrDefault(ProductVariant.Size.XL,  0));
+            dto.setStockXxl(stockMap.getOrDefault(ProductVariant.Size.XXL, 0));
+        }
+        return dto;
+    }
+
+    /** Null-safe integer coercion — treats null form values as zero. */
+    private static int coerce(Integer value) {
+        return value == null ? 0 : Math.max(0, value);
+    }
+
+    /**
+     * Restores a soft-deleted product by setting {@code deleted = false} via a
+     * direct field update followed by a save. The {@code @SQLRestriction} is a
+     * Hibernate-level filter that cannot be bypassed with JPQL for a single entity
+     * read, so we use a native query approach via {@link ProductRepository#findAllSoftDeleted()}
+     * combined with an ID lookup on the raw result.
+     *
+     * @param productId PK of the product to restore
+     * @throws EntityNotFoundException if no soft-deleted product with the given ID exists
+     */
+    @CacheEvict(value = "products", allEntries = true)
+    @Transactional(readOnly = false, rollbackFor = Exception.class)
+    public Product restoreProduct(Long productId) {
+        Product product = productRepository.findAllSoftDeleted().stream()
+                .filter(p -> p.getId().equals(productId))
+                .findFirst()
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Soft-deleted product not found: " + productId));
+        product.setDeleted(false);
+        product.setActive(true);
+        return productRepository.save(product);
+    }
+}

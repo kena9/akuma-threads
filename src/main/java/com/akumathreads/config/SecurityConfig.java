@@ -31,7 +31,7 @@ public class SecurityConfig {
             // In production, replace with a compiled Tailwind build and remove this entry.
             "script-src 'self' https://cdn.tailwindcss.com; " +
             // 'unsafe-inline' required for Tailwind's runtime JIT style injection.
-            "style-src 'self' 'unsafe-inline'; " +
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
             "img-src 'self' data: https:; " +
             "font-src 'self' https://fonts.gstatic.com; " +
             "frame-ancestors 'none'; " +
@@ -63,7 +63,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/cart/count").permitAll()
                 // All other /api/cart/** operations require authentication
                 .requestMatchers("/api/cart/**").authenticated()
-                .requestMatchers("/account/**", "/checkout/**", "/orders/**").authenticated()
+                .requestMatchers("/account/**", "/checkout/**", "/orders/**", "/order/**").authenticated()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
@@ -152,4 +152,8 @@ public class SecurityConfig {
     public TomcatContextCustomizer sameSiteCookieCustomizer() {
         return (Context context) -> {
             Rfc6265CookieProcessor cookieProcessor = new Rfc6265CookieProcessor();
-            cookieProcessor.setSameSiteCookies(SameSiteCookies.STRIC
+            cookieProcessor.setSameSiteCookies(SameSiteCookies.STRICT.getValue());
+            context.setCookieProcessor(cookieProcessor);
+        };
+    }
+}
