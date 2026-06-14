@@ -13,16 +13,15 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <meta http-equiv="Content-Security-Policy"
-          content="default-src 'self'; script-src 'self' https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; frame-ancestors 'none'; form-action 'self'"/>
+          content="default-src 'self'; script-src 'self' https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; frame-ancestors 'none'; form-action 'self'"/>
 
-    <title th:text="${title} + ' — Akuma Threads'">Akuma Threads</title>
+    <title th:text="${title} + ' — Olly Threads'">Olly Threads</title>
 
-    <!--
-      Tailwind Play CDN — development convenience only.
-      Replace with a compiled stylesheet (npx tailwindcss -o static/css/tailwind.min.css)
-      before production deployment to avoid the runtime JIT overhead and to harden the CSP
-      by removing 'unsafe-inline' from style-src.
-    -->
+    <!-- Signature font — Pinyon Script for the brand wordmark -->
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
+    <link href="https://fonts.googleapis.com/css2?family=Pinyon+Script&display=swap" rel="stylesheet"/>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -30,26 +29,22 @@
             theme: {
                 extend: {
                     colors: {
-                        brand:      '#4F46E5',
-                        'brand-dark': '#3730A3'
+                        brand:        '#e50914',
+                        'brand-dark': '#b8070f'
                     },
                     fontFamily: {
-                        sans: ['Inter', 'system-ui', 'sans-serif']
+                        sans:      ['Inter', 'system-ui', 'sans-serif'],
+                        signature: ['"Pinyon Script"', 'cursive']
                     }
                 }
             }
         }
     </script>
 
-    <!--
-      Theme initialisation — runs synchronously before first paint to prevent
-      a flash of the wrong theme when the user has a saved preference.
-      Inline scripts conflict with a strict CSP script-src. In production,
-      move this to a JS file and serve with a nonce via a ContentSecurityPolicyNonceRequestAttributeAssigningHandler.
-    -->
+    <!-- Theme init — before first paint to prevent flash -->
     <script>
         (function () {
-            var saved = localStorage.getItem('akuma-theme');
+            var saved = localStorage.getItem('olly-theme');
             var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
             if (saved === 'dark' || (!saved && prefersDark)) {
                 document.documentElement.classList.add('dark');
@@ -57,11 +52,10 @@
         })();
     </script>
 
-    <!-- CSRF token in meta so JS modules can read it without embedding in every form -->
-    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <!-- CSRF meta tags for JS fetch calls -->
+    <meta name="_csrf"        th:content="${_csrf.token}"/>
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
 
-    <!-- Shared stylesheet for non-Tailwind overrides -->
     <link rel="stylesheet" th:href="@{/css/main.css}"/>
 </head>
 
@@ -72,63 +66,73 @@
   ============================================================
 -->
 <nav th:fragment="navbar"
-     class="sticky top-0 z-50 bg-gray-950 border-b border-gray-800 dark:bg-gray-950">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+     class="sticky top-0 z-50 bg-[#0a0a0a] border-b border-[#1a1a1a]">
+    <div class="max-w-7xl mx-auto px-6 sm:px-10 h-16 flex items-center justify-between">
 
-        <!-- Brand -->
+        <!-- Brand — actual handwritten signature image, inverted to white -->
         <a th:href="@{/}"
-           class="text-xl font-extrabold text-white tracking-tight hover:text-brand transition-colors duration-200">
-            ⚔️ Akuma Threads
+           class="group flex items-center leading-none hover:opacity-70 transition-opacity duration-200">
+            <!--
+              signature.png is the artist's handwritten mark (black ink on white).
+              filter: invert(1) flips it to white-on-transparent for the dark navbar.
+              Place the file at: src/main/resources/static/img/signature.png
+            -->
+            <img th:src="@{/img/signature.png}"
+                 alt="Olly Threads"
+                 style="height:42px; width:auto; filter:invert(1); opacity:0.9;"
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'"/>
+            <!-- Fallback: shown if image hasn't been added yet -->
+            <span style="display:none; font-family:'Pinyon Script',cursive; font-size:2rem; color:#fff; line-height:1;">
+                Olly Threads
+            </span>
         </a>
 
         <!-- Nav links -->
-        <ul class="hidden md:flex items-center gap-6 list-none m-0 p-0">
+        <ul class="hidden md:flex items-center gap-8 list-none m-0 p-0">
             <li>
                 <a th:href="@{/shop}"
-                   class="text-sm font-medium text-gray-400 hover:text-white transition-colors duration-200">
+                   class="font-mono text-[11px] font-bold tracking-[0.2em] uppercase text-[#555] hover:text-white transition-colors duration-200">
                     Shop
                 </a>
             </li>
             <li sec:authorize="isAuthenticated()">
                 <a th:href="@{/cart}"
-                   class="relative text-sm font-medium text-gray-400 hover:text-white transition-colors duration-200">
+                   class="relative font-mono text-[11px] font-bold tracking-[0.2em] uppercase text-[#555] hover:text-white transition-colors duration-200">
                     Cart
                     <span id="cart-count"
-                          class="hidden absolute -top-2 -right-4 bg-brand text-white text-xs font-bold rounded-full w-5 h-5 inline-flex items-center justify-center">
+                          class="hidden absolute -top-2 -right-5 bg-[#e50914] text-white text-[9px] font-bold rounded-full w-4 h-4 inline-flex items-center justify-center">
                         0
                     </span>
                 </a>
             </li>
             <li sec:authorize="isAuthenticated()">
                 <a th:href="@{/orders}"
-                   class="text-sm font-medium text-gray-400 hover:text-white transition-colors duration-200">
+                   class="font-mono text-[11px] font-bold tracking-[0.2em] uppercase text-[#555] hover:text-white transition-colors duration-200">
                     Orders
                 </a>
             </li>
             <li sec:authorize="hasRole('ADMIN')">
-                <a th:href="@{/admin/products}"
-                   class="text-sm font-medium text-amber-400 hover:text-amber-300 transition-colors duration-200">
+                <a th:href="@{/admin/dashboard}"
+                   class="font-mono text-[11px] font-bold tracking-[0.2em] uppercase text-[#e50914] hover:text-white transition-colors duration-200">
                     Admin
                 </a>
             </li>
         </ul>
 
         <!-- Right controls -->
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-4">
 
             <!-- Dark-mode toggle -->
             <button id="theme-toggle"
                     onclick="toggleDark()"
                     aria-label="Toggle dark mode"
-                    class="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors duration-200">
-                <!-- Sun icon — shown in dark mode -->
-                <svg class="hidden dark:block w-5 h-5" xmlns="http://www.w3.org/2000/svg"
+                    class="p-1.5 text-[#444] hover:text-white transition-colors duration-200">
+                <svg class="hidden dark:block w-4 h-4" xmlns="http://www.w3.org/2000/svg"
                      fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round"
                           d="M12 3v1m0 16v1m8.66-9h-1M4.34 12h-1m15.07-6.36-.71.71M5.64 18.36l-.71.71M18.36 18.36l-.71-.71M5.64 5.64l-.71-.71M12 7a5 5 0 1 0 0 10A5 5 0 0 0 12 7z"/>
                 </svg>
-                <!-- Moon icon — shown in light mode -->
-                <svg class="block dark:hidden w-5 h-5" xmlns="http://www.w3.org/2000/svg"
+                <svg class="block dark:hidden w-4 h-4" xmlns="http://www.w3.org/2000/svg"
                      fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round"
                           d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 1 0 9.79 9.79z"/>
@@ -138,7 +142,7 @@
             <sec:authorize access="isAuthenticated()">
                 <form th:action="@{/logout}" method="post" class="m-0">
                     <button type="submit"
-                            class="text-sm font-medium text-gray-400 hover:text-white transition-colors duration-200">
+                            class="font-mono text-[11px] font-bold tracking-[0.2em] uppercase text-[#555] hover:text-white transition-colors duration-200">
                         Logout
                     </button>
                 </form>
@@ -146,11 +150,11 @@
 
             <sec:authorize access="!isAuthenticated()">
                 <a th:href="@{/login}"
-                   class="text-sm font-medium text-gray-400 hover:text-white transition-colors duration-200">
+                   class="font-mono text-[11px] font-bold tracking-[0.2em] uppercase text-[#555] hover:text-white transition-colors duration-200">
                     Login
                 </a>
                 <a th:href="@{/register}"
-                   class="text-sm font-bold bg-brand hover:bg-brand-dark text-white px-4 py-2 rounded-lg transition-colors duration-200">
+                   class="font-mono text-[11px] font-bold tracking-[0.2em] uppercase text-white border border-[#e50914] px-4 py-2 hover:bg-[#e50914] transition-colors duration-200">
                     Sign Up
                 </a>
             </sec:authorize>
@@ -161,31 +165,14 @@
 <!--
   ============================================================
   FOOTER FRAGMENT
-  Usage: <div th:replace="~{fragments/layout :: footer}"></div>
   ============================================================
 -->
 <footer th:fragment="footer"
-        class="border-t border-gray-800 bg-gray-950 text-gray-500 text-sm text-center py-6 mt-auto">
-    <p>© 2026 Akuma Threads — Original Anime Artist Clothing</p>
-</footer>
-
-<!--
-  ============================================================
-  THEME TOGGLE SCRIPT (placed at bottom of layout to avoid repetition)
-  Include once per page: <div th:replace="~{fragments/layout :: themeScript}"></div>
-  ============================================================
--->
-<script th:fragment="themeScript">
-    function toggleDark() {
-        var html = document.documentElement;
-        if (html.classList.contains('dark')) {
-            html.classList.remove('dark');
-            localStorage.setItem('akuma-theme', 'light');
-        } else {
-            html.classList.add('dark');
-            localStorage.setItem('akuma-theme', 'dark');
-        }
-    }
-</script>
-
-</html>
+        class="border-t border-[#1a1a1a] bg-[#0a0a0a] py-10 mt-auto">
+    <div class="max-w-7xl mx-auto px-6 sm:px-10 space-y-4">
+        <!-- Top row: wordmark + copyright -->
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+            <span style="font-family:'Pinyon Script',cursive; font-size:1.5rem; color:#333; line-height:1;">
+                Olly Threads
+            </span>
+            <p class="font-mono text-[10px]

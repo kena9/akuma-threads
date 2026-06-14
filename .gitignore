@@ -37,6 +37,3 @@ application-prod.properties
 
 # Compiled
 *.class
-
-# Uploaded files (local dev)
-uploads/

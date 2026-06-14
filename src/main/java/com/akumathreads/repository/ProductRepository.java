@@ -2,8 +2,12 @@ package com.akumathreads.repository;
 
 import com.akumathreads.model.Product;
 import jakarta.persistence.QueryHint;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.repository.query.Param;
@@ -13,77 +17,66 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Product repository with N+1 prevention via entity graphs and JPQL JOIN FETCHes.
+ * Product repository with N+1 prevention, dynamic filtering via Specifications,
+ * and paginated shop queries.
  *
- * <p>All standard {@code findBy*} methods benefit from the {@code @SQLRestriction("deleted = false")}
- * on the entity, so soft-deleted products are automatically excluded without any
- * additional {@code active = true} predicate.
+ * <p>Extending {@link JpaSpecificationExecutor} unlocks
+ * {@code findAll(Specification, Pageable)} — the backbone of the shop filter system.
+ * All standard methods benefit from {@code @SQLRestriction("deleted = false")} on
+ * the entity, so soft-deleted products are excluded automatically.
+ *
+ * <p>N+1 strategy for paginated results: rather than using JOIN FETCH (which breaks
+ * pagination by forcing Hibernate to load all rows into memory), we rely on
+ * {@code @BatchSize(size = 30)} declared on {@code Product.variants}. When Hibernate
+ * loads a page of 12 products, it issues a single {@code IN(...)} query for their
+ * variant collections — effectively zero N+1 with zero pagination compromise.
  */
 @Repository
-public interface ProductRepository extends JpaRepository<Product, Long> {
+public interface ProductRepository extends JpaRepository<Product, Long>,
+                                            JpaSpecificationExecutor<Product> {
 
-    // ── N+1-safe single-product fetch ─────────────────────────────────────────
+    // ── Paginated shop query (primary read path) ──────────────────────────────
 
     /**
-     * Fetches one product together with all its variants in a single SQL query
-     * using a JPQL JOIN FETCH — avoids the N+1 problem on the product detail page.
+     * Paginated, dynamically filtered shop listing.
+     * The {@link Specification} is built by {@link ProductSpecification#withFilters}
+     * and encodes keyword, category, and price range predicates.
+     * {@link Pageable} carries page number, page size (12), and sort direction.
      *
-     * <p>EntityGraph alternative (commented out — use whichever style your team prefers):
-     * {@code @EntityGraph(attributePaths = {"variants"})}
+     * <p>Variant loading is handled by {@code @BatchSize} — no JOIN FETCH needed here.
      *
-     * @param productId PK of the product to load
-     * @return an {@link Optional} containing the product with variants, or empty
+     * @param spec     composed filter specification; use {@code Specification.where(null)}
+     *                 for an unfiltered listing
+     * @param pageable pagination + sort parameters
+     * @return one page of matching products
+     */
+    Page<Product> findAll(Specification<Product> spec, Pageable pageable);
+
+    // ── N+1-safe single-product fetch (detail page) ───────────────────────────
+
+    /**
+     * Fetches one product with all variants in a single SQL JOIN FETCH.
+     * Used on the product detail page where we need full variant data immediately.
      */
     @Query("SELECT p FROM Product p JOIN FETCH p.variants WHERE p.id = :productId")
     Optional<Product> findByIdWithVariants(@Param("productId") Long productId);
 
-    // ── N+1-safe collection fetch ─────────────────────────────────────────────
+    // ── Non-paginated fetches (admin + seeding) ───────────────────────────────
 
-    /**
-     * Fetches all non-deleted active products with their variants using the
-     * {@code Product.withVariants} named entity graph defined on the entity class.
-     *
-     * <p>The {@code org.hibernate.cacheable} hint marks the query result as
-     * eligible for the second-level query cache (requires a second-level cache
-     * provider such as EhCache or Caffeine configured in application.properties).
-     */
     @EntityGraph(value = "Product.withVariants")
     @QueryHints(@QueryHint(name = "org.hibernate.cacheable", value = "true"))
     @Query("SELECT p FROM Product p WHERE p.active = true ORDER BY p.createdDate DESC")
     List<Product> findAllActiveWithVariants();
 
-    // ── Standard filtered finders ─────────────────────────────────────────────
-
-    /**
-     * Finds all active (non-soft-deleted) products in the given category.
-     * The {@code @SQLRestriction} on {@link Product} already excludes deleted rows,
-     * so this method does not need an explicit {@code deleted = false} predicate.
-     */
     List<Product> findByCategoryAndActiveTrue(Product.Category category);
 
-    /**
-     * Case-insensitive product name search for the shop search bar.
-     */
     List<Product> findByNameContainingIgnoreCaseAndActiveTrue(String keyword);
 
-    /**
-     * Returns all active products ordered by creation date descending.
-     * Used for the default shop listing page.
-     */
     @QueryHints(@QueryHint(name = "org.hibernate.cacheable", value = "true"))
     List<Product> findByActiveTrueOrderByCreatedDateDesc();
 
-    // ── Admin queries (bypass soft-delete filter via native query) ────────────
+    // ── Admin: bypass soft-delete filter ─────────────────────────────────────
 
-    /**
-     * Retrieves all products including soft-deleted ones for the admin trash view.
-     * Uses a native query to bypass the {@code @SQLRestriction} Hibernate filter.
-     *
-     * <p>This is intentional: the restriction is a static Hibernate annotation
-     * on the entity class and cannot be selectively disabled from a JPQL query
-     * without a Hibernate {@code Session}-level filter. A native query is the
-     * cleanest escape hatch for this specific admin use case.
-     */
     @Query(value = "SELECT * FROM products WHERE deleted = true ORDER BY last_modified_date DESC",
            nativeQuery = true)
     List<Product> findAllSoftDeleted();

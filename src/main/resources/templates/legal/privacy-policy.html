@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/layout :: head('Privacy Policy')}"></head>
+
+<body class="bg-[#0a0a0a] text-white min-h-screen flex flex-col">
+
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<main class="flex-1 max-w-3xl mx-auto w-full px-6 sm:px-10 py-20">
+
+    <div class="mb-12 border-b border-[#1a1a1a] pb-8">
+        <p class="font-mono text-[10px] tracking-[0.3em] uppercase text-[#e50914] mb-3">Legal</p>
+        <h1 style="font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+                   font-size: clamp(2rem, 5vw, 3.5rem); line-height: 0.9; letter-spacing: -0.02em;">
+            PRIVACY POLICY
+        </h1>
+        <p class="font-mono text-[10px] text-[#444] tracking-widest uppercase mt-4">Last updated: June 2026</p>
+    </div>
+
+    <div class="space-y-10 font-mono text-[13px] leading-relaxed text-[#aaa]">
+
+        <section>
+            <h2 class="font-mono text-[10px] tracking-[0.25em] uppercase text-white mb-4">1. Who We Are</h2>
+            <p>
+                Olly Threads ("we," "us," "our") is an independent anime artist clothing brand operated
+                by Oliver Jin Wang. We sell original graphic apparel through this website. Our email for
+                privacy-related matters is <a href="mailto:contact@ollythreads.com"
+                class="text-[#e50914] hover:underline">contact@ollythreads.com</a>.
+            </p>
+        </section>
+
+        <section>
+            <h2 class="font-mono text-[10px] tracking-[0.25em] uppercase text-white mb-4">2. Information We Collect</h2>
+            <p class="mb-4">
+                We collect information you provide directly when you create an account or place an order:
+            </p>
+            <ul class="list-none space-y-2 pl-4 border-l border-[#222]">
+                <li class="before:content-['—'] before:mr-3 before:text-[#e50914]">Name and email address</li>
+                <li class="before:content-['—'] before:mr-3 before:text-[#e50914]">Shipping address</li>
+                <li class="before:content-['—'] before:mr-3 before:text-[#e50914]">Order history and payment confirmation numbers</li>
+            </ul>
+            <p class="mt-4">
+                We do <strong class="text-white">not</strong> collect or store payment card details on our servers.
+                All payment processing is handled by our payment processor under their own privacy policy.
+            </p>
+        </section>
+
+        <section>
+            <h2 class="font-mono text-[10px] tracking-[0.25em] uppercase text-white mb-4">3. How We Use Your Information</h2>
+            <p>We use the information we collect to:</p>
+            <ul class="list-none space-y-2 pl-4 border-l border-[#222] mt-3">
+                <li class="before:content-['—'] before:mr-3 before:text-[#e50914]">Process and fulfill your orders</li>
+                <li class="before:content-['—'] before:mr-3 before:text-[#e50914]">Send order confirmations and shipping updates</li>
+                <li class="before:content-['—'] before:mr-3 before:text-[#e50914]">Respond to customer service inquiries</li>
+                <li class="before:content-['—'] before:mr-3 before:text-[#e50914]">Improve the website and detect security issues</li>
+            </ul>
+            <p class="mt-4">
+                We do not sell, rent, or share your personal information with third parties for marketing purposes.
+            </p>
+        </section>
+
+        <section>
+            <h2 class="font-mono text-[10px] tracking-[0.25em] uppercase text-white mb-4">4. Print-on-Demand Fulfillment</h2>
+            <p>
+                Orders are fulfilled through our print-on-demand partner (Printify). Your name and
+                shipping address are shared with Printify solely for the purpose of producing and
+                delivering your order. Printify processes this data under their own privacy policy.
+            </p>
+        </section>
+
+        <section>
+            <h2 class="font-mono text-[10px] tracking-[0.25em] uppercase text-white mb-4">5. Cookies</h2>
+            <p>
+                We use session cookies strictly necessary for site functionality (authentication, cart state).
+                We do not use advertising or analytics cookies at this time. You may disable cookies in your
+                browser settings, but doing so may affect site functionality.
+            </p>
+        </section>
+
+        <section>
+            <h2 class="font-mono text-[10px] tracking-[0.25em] uppercase text-white mb-4">6. Data Retention</h2>
+            <p>
+                We retain your account information and order history for as long as your account is active
+                or as needed to comply with legal obligations. You may request deletion of your account and
+                associated data by contacting us.
+            </p>
+        </section>
+
+        <section>
+            <h2 class="font-mono text-[10px] tracking-[0.25em] uppercase text-white mb-4">7. Your Rights</h2>
+            <p>
+                You have the right to access, correct, or delete the personal information we hold about you.
+                To exercise any of these rights, email us at
+                <a href="mailto:contact@ollythreads.com" class="text-[#e50914] hover:underline">contact@ollythreads.com</a>.
+                We will respond within 30 days.
+            </p>
+        </section>
+
+        <section>
+            <h2 class="font-mono text-[10px] tracking-[0.25em] uppercase text-white mb-4">8. Changes to This Policy</h2>
+            <p>
+                We may update this Privacy Policy from time to time. The date at the top of this page
+                reflects the most recent revision. Continued use of the site after changes constitutes
+                acceptance of the updated policy.
+            </p>
+        </section>
+
+        <section>
+            <h2 class="font-mono text-[10px] tracking-[0.25em] uppercase text-white mb-4">9. Contact</h2>
+            <p>
+                For privacy questions or concerns, contact us at
+                <a href="mailto:contact@ollythreads.com" class="text-[#e50914] hover:underline">contact@ollythreads.com</a>.
+            </p>
+        </section>
+
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<script th:replace="~{fragments/layout :: themeScript}"></script>
+
+</body>
+</html>

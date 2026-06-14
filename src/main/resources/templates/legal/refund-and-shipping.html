@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/layout :: head('Refund & Shipping Policy')}"></head>
+
+<body class="bg-[#0a0a0a] text-white min-h-screen flex flex-col">
+
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<main class="flex-1 max-w-3xl mx-auto w-full px-6 sm:px-10 py-20">
+
+    <div class="mb-12 border-b border-[#1a1a1a] pb-8">
+        <p class="font-mono text-[10px] tracking-[0.3em] uppercase text-[#e50914] mb-3">Legal</p>
+        <h1 style="font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+                   font-size: clamp(2rem, 5vw, 3.5rem); line-height: 0.9; letter-spacing: -0.02em;">
+            REFUND &amp;<br>SHIPPING
+        </h1>
+        <p class="font-mono text-[10px] text-[#444] tracking-widest uppercase mt-4">Last updated: June 2026</p>
+    </div>
+
+    <div class="space-y-10 font-mono text-[13px] leading-relaxed text-[#aaa]">
+
+        <!-- ── Shipping ─────────────────────────────────────────────────────── -->
+        <section>
+            <h2 class="font-mono text-[10px] tracking-[0.25em] uppercase text-white mb-4">Shipping Policy</h2>
+
+            <div class="space-y-6">
+                <div>
+                    <h3 class="font-mono text-[9px] tracking-[0.2em] uppercase text-[#e50914] mb-2">Production Time</h3>
+                    <p>
+                        All Olly Threads items are made-to-order through our print-on-demand partner.
+                        Production typically takes <strong class="text-white">3–7 business days</strong>
+                        before shipment. You will receive a tracking number via email once your order ships.
+                    </p>
+                </div>
+
+                <div>
+                    <h3 class="font-mono text-[9px] tracking-[0.2em] uppercase text-[#e50914] mb-2">Domestic Shipping (USA)</h3>
+                    <p>
+                        Standard shipping: <strong class="text-white">5–10 business days</strong> after production.
+                        Express options may be available at checkout.
+                    </p>
+                </div>
+
+                <div>
+                    <h3 class="font-mono text-[9px] tracking-[0.2em] uppercase text-[#e50914] mb-2">International Shipping</h3>
+                    <p>
+                        International shipping is available to most countries.
+                        Estimated delivery is <strong class="text-white">10–20 business days</strong>
+                        after production, depending on destination and customs processing.
+                        Customers are responsible for any import duties, taxes, or customs fees.
+                    </p>
+                </div>
+
+                <div>
+                    <h3 class="font-mono text-[9px] tracking-[0.2em] uppercase text-[#e50914] mb-2">Tracking</h3>
+                    <p>
+                        A tracking number will be emailed to you once your order ships.
+                        You can also view order status in your account under Orders.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ── Divider ─────────────────────────────────────────────────────── -->
+        <div class="border-t border-[#1a1a1a]"></div>
+
+        <!-- ── Returns ────────────────────────────────────────────────────── -->
+        <section>
+            <h2 class="font-mono text-[10px] tracking-[0.25em] uppercase text-white mb-4">Return &amp; Refund Policy</h2>
+
+            <div class="space-y-6">
+                <div>
+                    <h3 class="font-mono text-[9px] tracking-[0.2em] uppercase text-[#e50914] mb-2">Made-to-Order Notice</h3>
+                    <p>
+                        Because all items are printed on-demand specifically for you, we generally
+                        <strong class="text-white">do not accept returns or exchanges</strong> for
+                        buyer's remorse or size errors. Please review our size chart carefully before ordering.
+                    </p>
+                </div>
+
+                <div>
+                    <h3 class="font-mono text-[9px] tracking-[0.2em] uppercase text-[#e50914] mb-2">Defective or Damaged Items</h3>
+                    <p>
+                        If your item arrives defective, damaged in transit, or with a print error,
+                        we will replace it at no cost to you. Contact us within
+                        <strong class="text-white">14 days</strong> of delivery with your order
+                        number and a clear photo of the issue at
+                        <a href="mailto:contact@ollythreads.com" class="text-[#e50914] hover:underline">contact@ollythreads.com</a>.
+                    </p>
+                </div>
+
+                <div>
+                    <h3 class="font-mono text-[9px] tracking-[0.2em] uppercase text-[#e50914] mb-2">Wrong Item Received</h3>
+                    <p>
+                        If you received the wrong item, contact us with your order number and a photo.
+                        We will reship the correct item and arrange return of the wrong one at no cost to you.
+                    </p>
+                </div>
+
+                <div>
+                    <h3 class="font-mono text-[9px] tracking-[0.2em] uppercase text-[#e50914] mb-2">Lost Packages</h3>
+                    <p>
+                        If your package is confirmed lost by the carrier, we will reship your order or
+                        issue a full refund. Packages are considered lost after
+                        <strong class="text-white">30 days</strong> (domestic) or
+                        <strong class="text-white">45 days</strong> (international) past the ship date
+                        with no tracking movement.
+                    </p>
+                </div>
+
+                <div>
+                    <h3 class="font-mono text-[9px] tracking-[0.2em] uppercase text-[#e50914] mb-2">How to Request a Refund or Replacement</h3>
+                    <p>
+                        Email <a href="mailto:contact@ollythreads.com" class="text-[#e50914] hover:underline">contact@ollythreads.com</a>
+                        with subject line "Order #[your order number] — [issue type]".
+                        Include your name, order number, and a photo of the item if applicable.
+                        We aim to respond within 2 business days.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<script th:replace="~{fragments/layout :: themeScript}"></script>
+
+</body>
+</html>

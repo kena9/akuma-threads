@@ -56,7 +56,8 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/", "/shop/**", "/product/**",
                     "/register", "/login",
-                    "/css/**", "/js/**", "/images/**", "/error"
+                    "/privacy-policy", "/terms-of-service", "/refund-and-shipping",
+                    "/css/**", "/js/**", "/img/**", "/images/**", "/error"
                 ).permitAll()
                 // Cart count endpoint is public so the navbar badge works for guests
                 .requestMatchers("/api/cart/count").permitAll()
@@ -151,8 +152,4 @@ public class SecurityConfig {
     public TomcatContextCustomizer sameSiteCookieCustomizer() {
         return (Context context) -> {
             Rfc6265CookieProcessor cookieProcessor = new Rfc6265CookieProcessor();
-            cookieProcessor.setSameSiteCookies(SameSiteCookies.STRICT.getValue());
-            context.setCookieProcessor(cookieProcessor);
-        };
-    }
-}
+            cookieProcessor.setSameSiteCookies(SameSiteCookies.STRIC

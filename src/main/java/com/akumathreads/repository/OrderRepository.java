@@ -63,7 +63,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
      * @return list of fully-loaded orders, empty list if none found
      */
     @EntityGraph(attributePaths = {"items", "items.variant", "items.variant.product"})
-    @Query("SELECT DISTINCT o FROM Order o WHERE o.user.id = :userId ORDER BY o.createdDate DESC")
+    @Query("SELECT DISTINCT o FROM Order o WHERE o.user.id = :userId ORDER BY o.createdAt DESC")
     List<Order> findAllByUserIdWithItems(@Param("userId") Long userId);
 
     // ── Admin queries ─────────────────────────────────────────────────────────
@@ -73,11 +73,11 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
      * Does NOT eagerly load items — the admin list view shows only order-level
      * data (total, status, customer name) and uses a separate detail call for items.
      */
-    List<Order> findAllByOrderByCreatedDateDesc();
+    List<Order> findAllByOrderByCreatedAtDesc();
 
     /**
      * All orders for a specific user sorted newest-first.
      * Light version — no item join fetch, used for the admin user-detail panel.
      */
-    List<Order> findByUserIdOrderByCreatedDateDesc(Long userId);
+    List<Order> findByUserIdOrderByCreatedAtDesc(Long userId);
 }

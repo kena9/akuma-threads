@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head th:replace="~{fragments/layout :: head('Admin Dashboard')}"></head>
+
+<body class="bg-[#0a0a0a] text-white min-h-screen flex flex-col">
+
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<main class="flex-1 max-w-7xl mx-auto w-full px-6 sm:px-10 py-14">
+
+    <!-- ── Page header ──────────────────────────────────────────────────────── -->
+    <div class="mb-14 border-b border-[#1a1a1a] pb-8">
+        <p class="font-mono text-[10px] tracking-[0.3em] uppercase text-[#e50914] mb-3">Olly Threads / Control Panel</p>
+        <h1 style="font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+                   font-size: clamp(2.5rem, 6vw, 4.5rem);
+                   line-height: 0.9;
+                   letter-spacing: -0.02em;">
+            ADMIN<br><span class="text-[#e50914]">DASHBOARD</span>
+        </h1>
+    </div>
+
+    <!-- ── Flash message ────────────────────────────────────────────────────── -->
+    <div th:if="${successMsg}"
+         class="mb-10 border border-[#e50914] bg-[#e50914]/10 px-6 py-4 font-mono text-[11px] tracking-[0.15em] uppercase text-[#e50914]"
+         th:text="${successMsg}">
+    </div>
+
+    <!-- ── Upload new design CTA ─────────────────────────────────────────────── -->
+    <div class="mb-12 flex items-center justify-between">
+        <h2 class="font-mono text-[11px] tracking-[0.3em] uppercase text-[#555]">Active Drops</h2>
+        <a th:href="@{/admin/product/new}"
+           class="font-mono text-[11px] tracking-[0.2em] uppercase font-bold
+                  bg-[#e50914] text-white px-6 py-3 hover:bg-[#b8070f]
+                  transition-colors duration-200 inline-block">
+            + Upload Design
+        </a>
+    </div>
+
+    <!-- ── Products table ────────────────────────────────────────────────────── -->
+    <div class="mb-20 overflow-x-auto">
+        <table class="w-full border-collapse">
+            <thead>
+                <tr class="border-b border-[#222]">
+                    <th class="font-mono text-[9px] tracking-[0.25em] uppercase text-[#444] text-left pb-3 pr-6">Design</th>
+                    <th class="font-mono text-[9px] tracking-[0.25em] uppercase text-[#444] text-left pb-3 pr-6">Title</th>
+                    <th class="font-mono text-[9px] tracking-[0.25em] uppercase text-[#444] text-left pb-3 pr-6">Category</th>
+                    <th class="font-mono text-[9px] tracking-[0.25em] uppercase text-[#444] text-left pb-3 pr-6">Price</th>
+                    <th class="font-mono text-[9px] tracking-[0.25em] uppercase text-[#444] text-left pb-3 pr-6">Status</th>
+                    <th class="font-mono text-[9px] tracking-[0.25em] uppercase text-[#444] text-left pb-3">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Empty state -->
+                <tr th:if="${#lists.isEmpty(products)}">
+                    <td colspan="6" class="py-16 text-center font-mono text-[11px] text-[#333] tracking-[0.2em] uppercase">
+                        No designs yet. Upload your first drop.
+                    </td>
+                </tr>
+
+                <!-- Product rows -->
+                <tr th:each="product : ${products}"
+                    class="border-b border-[#111] hover:bg-[#111] transition-colors duration-150 group">
+
+                    <!-- Thumbnail -->
+                    <td class="py-4 pr-6 w-16">
+                        <div class="w-12 h-12 bg-[#111] border border-[#1a1a1a] overflow-hidden flex items-center justify-center">
+                            <img th:if="${product.imageUrl != null and !#strings.isEmpty(product.imageUrl)}"
+                                 th:src="${product.imageUrl}"
+                                 th:alt="${product.name}"
+                                 class="w-full h-full object-cover"/>
+                            <span th:unless="${product.imageUrl != null and !#strings.isEmpty(product.imageUrl)}"
+                                  class="font-mono text-[8px] text-[#333] tracking-wider">IMG</span>
+                        </div>
+                    </td>
+
+                    <!-- Name -->
+                    <td class="py-4 pr-6">
+                        <span class="font-mono text-[12px] font-bold text-white tracking-wide"
+                              th:text="${product.name}">Product Name</span>
+                    </td>
+
+                    <!-- Category -->
+                    <td class="py-4 pr-6">
+                        <span class="font-mono text-[10px] text-[#555] tracking-[0.15em] uppercase"
+                              th:text="${product.category}">HOODIE</span>
+                    </td>
+
+                    <!-- Price -->
+                    <td class="py-4 pr-6">
+                        <span class="font-mono text-[12px] text-white"
+                              th:text="'$' + ${#numbers.formatDecimal(product.price, 1, 2)}">$0.00</span>
+                    </td>
+
+                    <!-- Status badge -->
+                    <td class="py-4 pr-6">
+                        <span th:if="${product.active}"
+                              class="font-mono text-[9px] tracking-[0.2em] uppercase
+                                     text-green-400 border border-green-400/30 px-2 py-1">
+                            Live
+                        </span>
+                        <span th:unless="${product.active}"
+                              class="font-mono text-[9px] tracking-[0.2em] uppercase
+                                     text-[#444] border border-[#222] px-2 py-1">
+                            Hidden
+                        </span>
+                    </td>
+
+                    <!-- Actions -->
+                    <td class="py-4">
+                        <div class="flex items-center gap-3 flex-wrap">
+                            <!-- Edit -->
+                            <a th:href="@{/admin/product/{id}/edit(id=${product.id})}"
+                               class="font-mono text-[9px] tracking-[0.2em] uppercase text-[#555]
+                                      hover:text-white transition-colors duration-150 border border-[#222]
+                                      hover:border-[#555] px-3 py-1.5">
+                                Edit
+                            </a>
+
+                            <!-- Toggle active/hidden -->
+                            <form th:action="@{/admin/product/{id}/toggle(id=${product.id})}"
+                                  method="post" class="inline">
+                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                <button type="submit"
+                                        class="font-mono text-[9px] tracking-[0.2em] uppercase
+                                               border px-3 py-1.5 transition-colors duration-150"
+                                        th:classappend="${product.active}
+                                            ? 'text-[#555] border-[#222] hover:text-yellow-400 hover:border-yellow-400/40'
+                                            : 'text-[#555] border-[#222] hover:text-green-400 hover:border-green-400/40'"
+                                        th:text="${product.active} ? 'Hide' : 'Show'">Toggle</button>
+                            </form>
+
+                            <!-- Delete -->
+                            <form th:action="@{/admin/product/{id}/delete(id=${product.id})}"
+                                  method="post" class="inline"
+                                  onsubmit="return confirm('Remove this product from the store?')">
+                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                <button type="submit"
+                                        class="font-mono text-[9px] tracking-[0.2em] uppercase
+                                               text-[#555] border border-[#222]
+                                               hover:text-[#e50914] hover:border-[#e50914]/40
+                                               transition-colors duration-150 px-3 py-1.5">
+                                    Delete
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ── Recent Orders ──────────────────────────────────────────────────────── -->
+    <div>
+        <h2 class="font-mono text-[11px] tracking-[0.3em] uppercase text-[#555] mb-6">Recent Orders</h2>
+
+        <div class="overflow-x-auto">
+            <table class="w-full border-collapse">
+                <thead>
+                    <tr class="border-b border-[#222]">
+                        <th class="font-mono text-[9px] tracking-[0.25em] uppercase text-[#444] text-left pb-3 pr-6">Order #</th>
+                        <th class="font-mono text-[9px] tracking-[0.25em] uppercase text-[#444] text-left pb-3 pr-6">Customer</th>
+                        <th class="font-mono text-[9px] tracking-[0.25em] uppercase text-[#444] text-left pb-3 pr-6">Total</th>
+                        <th class="font-mono text-[9px] tracking-[0.25em] uppercase text-[#444] text-left pb-3 pr-6">Status</th>
+                        <th class="font-mono text-[9px] tracking-[0.25em] uppercase text-[#444] text-left pb-3">Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${#lists.isEmpty(orders)}">
+                        <td colspan="5" class="py-12 text-center font-mono text-[11px] text-[#333] tracking-[0.2em] uppercase">
+                            No orders yet.
+                        </td>
+                    </tr>
+
+                    <tr th:each="order, stat : ${orders}"
+                        th:if="${stat.index < 20}"
+                        class="border-b border-[#111] hover:bg-[#111] transition-colors duration-150">
+
+                        <td class="py-3 pr-6">
+                            <span class="font-mono text-[11px] text-white"
+                                  th:text="'#' + ${order.id}"></span>
+                        </td>
+                        <td class="py-3 pr-6">
+                            <span class="font-mono text-[11px] text-[#888]"
+                                  th:text="${order.user.name}"></span>
+                        </td>
+                        <td class="py-3 pr-6">
+                            <span class="font-mono text-[11px] text-white"
+                                  th:text="'$' + ${#numbers.formatDecimal(order.total, 1, 2)}"></span>
+                        </td>
+                        <td class="py-3 pr-6">
+                            <span class="font-mono text-[9px] tracking-[0.15em] uppercase px-2 py-0.5 border"
+                                  th:text="${order.status}"
+                                  th:classappend="${order.status.name() == 'PENDING'}    ? 'text-yellow-400 border-yellow-400/30' :
+                                                  (${order.status.name() == 'SHIPPED'}  ? 'text-blue-400 border-blue-400/30' :
+                                                  (${order.status.name() == 'DELIVERED'}? 'text-green-400 border-green-400/30' :
+                                                  (${order.status.name() == 'CANCELLED'}? 'text-[#e50914] border-[#e50914]/30' :
+                                                                                          'text-[#555] border-[#222]')))">
+                            </span>
+                        </td>
+                        <td class="py-3">
+                            <span class="font-mono text-[10px] text-[#444]"
+                                  th:text="${#temporals.format(order.createdAt, 'MMM d, yyyy')}"></span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<script th:replace="~{fragments/layout :: themeScript}"></script>
+
+</body>
+</html>

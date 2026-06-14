@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/layout :: head('Terms of Service')}"></head>
+
+<body class="bg-[#0a0a0a] text-white min-h-screen flex flex-col">
+
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<main class="flex-1 max-w-3xl mx-auto w-full px-6 sm:px-10 py-20">
+
+    <div class="mb-12 border-b border-[#1a1a1a] pb-8">
+        <p class="font-mono text-[10px] tracking-[0.3em] uppercase text-[#e50914] mb-3">Legal</p>
+        <h1 style="font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+                   font-size: clamp(2rem, 5vw, 3.5rem); line-height: 0.9; letter-spacing: -0.02em;">
+            TERMS OF SERVICE
+        </h1>
+        <p class="font-mono text-[10px] text-[#444] tracking-widest uppercase mt-4">Last updated: June 2026</p>
+    </div>
+
+    <div class="space-y-10 font-mono text-[13px] leading-relaxed text-[#aaa]">
+
+        <section>
+            <h2 class="font-mono text-[10px] tracking-[0.25em] uppercase text-white mb-4">1. Agreement</h2>
+            <p>
+                By accessing or purchasing from Olly Threads, you agree to these Terms of Service.
+                If you do not agree, please do not use the site. We reserve the right to update
+                these terms at any time; continued use after changes constitutes acceptance.
+            </p>
+        </section>
+
+        <section>
+            <h2 class="font-mono text-[10px] tracking-[0.25em] uppercase text-white mb-4">2. Products</h2>
+            <p>
+                All Olly Threads products are original graphic designs by Oliver Jin Wang, produced
+                on-demand by our fulfillment partner. Colors and sizing may vary slightly from images
+                shown on the website due to screen calibration and garment manufacturing tolerances.
+                We do our best to accurately represent products but cannot guarantee pixel-perfect
+                color matching.
+            </p>
+        </section>
+
+        <section>
+            <h2 class="font-mono text-[10px] tracking-[0.25em]] uppercase text-white mb-4">3. Orders and Payment</h2>
+            <p>
+                Placing an order constitutes an offer to purchase. We reserve the right to cancel
+                any order due to pricing errors, stock issues, or suspected fraudulent activity.
+                You will be notified and fully refunded if your order is cancelled by us.
+                Payment is charged at the time of order placement.
+            </p>
+        </section>
+
+        <section>
+            <h2 class="font-mono text-[10px] tracking-[0.25em] uppercase text-white mb-4">4. Intellectual Property</h2>
+            <p>
+                All artwork, graphics, logos, and designs on Olly Threads products and this website
+                are the original intellectual property of Oliver Jin Wang. Purchasing a product grants
+                you a personal, non-commercial license to wear and display that product. You may not
+                reproduce, redistribute, or commercially exploit any Olly Threads designs without
+                explicit written permission.
+            </p>
+            <p class="mt-4">
+                Any anime character references in our artwork are transformative fan art and are not
+                affiliated with, endorsed by, or produced in association with any original IP holder.
+            </p>
+        </section>
+
+        <section>
+            <h2 class="font-mono text-[10px] tracking-[0.25em] uppercase text-white mb-4">5. User Accounts</h2>
+            <p>
+                You are responsible for maintaining the confidentiality of your account credentials.
+                You must notify us immediately of any unauthorized access to your account. We are not
+                liable for losses resulting from unauthorized use of your account.
+            </p>
+        </section>
+
+        <section>
+            <h2 class="font-mono text-[10px] tracking-[0.25em] uppercase text-white mb-4">6. Limitation of Liability</h2>
+            <p>
+                To the fullest extent permitted by applicable law, Olly Threads and its owner shall
+                not be liable for any indirect, incidental, or consequential damages arising from
+                your use of this site or our products. Our total liability to you shall not exceed
+                the amount paid for the order in question.
+            </p>
+        </section>
+
+        <section>
+            <h2 class="font-mono text-[10px] tracking-[0.25em] uppercase text-white mb-4">7. Governing Law</h2>
+            <p>
+                These terms are governed by the laws of the state in which the business is registered.
+                Any disputes shall be resolved through binding arbitration or in the courts of that
+                jurisdiction.
+            </p>
+        </section>
+
+        <section>
+            <h2 class="font-mono text-[10px] tracking-[0.25em] uppercase text-white mb-4">8. Contact</h2>
+            <p>
+                Questions about these Terms? Email us at
+                <a href="mailto:contact@ollythreads.com" class="text-[#e50914] hover:underline">contact@ollythreads.com</a>.
+            </p>
+        </section>
+
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<script th:replace="~{fragments/layout :: themeScript}"></script>
+
+</body>
+</html>

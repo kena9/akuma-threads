@@ -105,6 +105,13 @@ public class Product extends BaseAuditEntity {
     @Column(nullable = false)
     private boolean active = true;
 
+    /**
+     * @BatchSize batches variant loading across all products in a Page result.
+     * When 12 products are loaded, Hibernate issues ONE IN(...) query for their
+     * variants instead of 12 separate SELECT queries — solves N+1 without
+     * breaking Pageable pagination (which JOIN FETCH would break).
+     */
+    @org.hibernate.annotations.BatchSize(size = 30)
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<ProductVariant> variants;
 

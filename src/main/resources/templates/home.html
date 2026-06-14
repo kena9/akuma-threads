@@ -1,47 +1,513 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org"
-      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<head>
-    <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Akuma Threads — Anime Artist Clothing</title>
-    <link rel="stylesheet" th:href="@{/css/main.css}"/>
-</head>
-<body>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      class="dark">
 
+<head th:replace="~{fragments/layout :: head('Original Anime Artist Clothing')}"></head>
+
+<body class="bg-[#0a0a0a] text-white min-h-screen flex flex-col overflow-x-hidden">
+
+<style>
+    @keyframes ticker {
+        0%   { transform: translateX(0); }
+        100% { transform: translateX(-50%); }
+    }
+    .animate-ticker { animation: ticker 30s linear infinite; display: inline-block; }
+    .animate-ticker:hover { animation-play-state: paused; }
+
+    .font-display {
+        font-family: 'Impact', 'Arial Narrow', 'Haettenschweiler', sans-serif;
+        font-stretch: condensed;
+    }
+    .font-mono-sharp { font-family: 'Courier New', 'Lucida Console', monospace; }
+
+    /* Hard border-reveal button */
+    .btn-sharp {
+        position: relative;
+        display: inline-block;
+        padding: 0.65rem 1.75rem;
+        border: 1.5px solid #fff;
+        color: #fff;
+        font-family: 'Courier New', monospace;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        overflow: hidden;
+        transition: color 0.15s;
+    }
+    .btn-sharp::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: #fff;
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 0.2s ease-out;
+        z-index: 0;
+    }
+    .btn-sharp:hover::before { transform: scaleX(1); }
+    .btn-sharp:hover { color: #0a0a0a; }
+    .btn-sharp span { position: relative; z-index: 1; }
+
+    .btn-sharp-red { border-color: #e50914; color: #e50914; }
+    .btn-sharp-red::before { background: #e50914; }
+    .btn-sharp-red:hover { color: #fff; }
+
+    /* Image zoom on card hover */
+    .card-img { transition: transform 0.5s ease-out; }
+    .product-card:hover .card-img { transform: scale(1.05); }
+
+    /* Slash micro-interaction */
+    .slash-reveal::after {
+        content: ' //';
+        opacity: 0;
+        color: #e50914;
+        transition: opacity 0.2s;
+    }
+    .slash-reveal:hover::after { opacity: 1; }
+
+    /* Hero image clip */
+    .clip-diagonal { clip-path: polygon(8% 0%, 100% 0%, 92% 100%, 0% 100%); }
+</style>
+
+<!-- ── Announcement ticker ───────────────────────────────────── -->
+<div class="bg-[#e50914] overflow-hidden whitespace-nowrap"
+     style="height:26px; line-height:26px;">
+    <div class="animate-ticker inline-block">
+        <span class="font-mono-sharp text-[9px] font-bold tracking-[0.3em] uppercase px-10">⚔ NEW DROP — OLLY THREADS SERIES 01</span>
+        <span class="font-mono-sharp text-[9px] font-bold tracking-[0.3em] uppercase px-6 opacity-50">//</span>
+        <span class="font-mono-sharp text-[9px] font-bold tracking-[0.3em] uppercase px-10">FREE SHIPPING OVER $75</span>
+        <span class="font-mono-sharp text-[9px] font-bold tracking-[0.3em] uppercase px-6 opacity-50">//</span>
+        <span class="font-mono-sharp text-[9px] font-bold tracking-[0.3em] uppercase px-10">ART BY @OLIVER_JIN_WANG — ORIGINAL INK</span>
+        <span class="font-mono-sharp text-[9px] font-bold tracking-[0.3em] uppercase px-6 opacity-50">//</span>
+        <span class="font-mono-sharp text-[9px] font-bold tracking-[0.3em] uppercase px-10">PRINT-ON-DEMAND × NO RESTOCKS</span>
+        <span class="font-mono-sharp text-[9px] font-bold tracking-[0.3em] uppercase px-6 opacity-50">//</span>
+        <!-- duplicate for seamless loop -->
+        <span class="font-mono-sharp text-[9px] font-bold tracking-[0.3em] uppercase px-10">⚔ NEW DROP — OLLY THREADS SERIES 01</span>
+        <span class="font-mono-sharp text-[9px] font-bold tracking-[0.3em] uppercase px-6 opacity-50">//</span>
+        <span class="font-mono-sharp text-[9px] font-bold tracking-[0.3em] uppercase px-10">FREE SHIPPING OVER $75</span>
+        <span class="font-mono-sharp text-[9px] font-bold tracking-[0.3em] uppercase px-6 opacity-50">//</span>
+        <span class="font-mono-sharp text-[9px] font-bold tracking-[0.3em] uppercase px-10">ART BY @OLIVER_JIN_WANG — ORIGINAL INK</span>
+        <span class="font-mono-sharp text-[9px] font-bold tracking-[0.3em] uppercase px-6 opacity-50">//</span>
+        <span class="font-mono-sharp text-[9px] font-bold tracking-[0.3em] uppercase px-10">PRINT-ON-DEMAND × NO RESTOCKS</span>
+        <span class="font-mono-sharp text-[9px] font-bold tracking-[0.3em] uppercase px-6 opacity-50">//</span>
+    </div>
+</div>
+
+<!-- ── Navbar ─────────────────────────────────────────────────── -->
 <div th:replace="~{fragments/layout :: navbar}"></div>
 
-<main>
-    <!-- Hero -->
-    <section class="hero">
-        <div class="hero-content">
-            <h1>Original Anime Art.<br/>Wearable Culture.</h1>
-            <p>Hand-crafted designs from an independent anime artist — hoodies, shirts, and accessories that tell a story.</p>
-            <a th:href="@{/shop}" class="btn-primary">Shop the Collection</a>
-        </div>
-    </section>
+<!-- ════════════════════════════════════════════════════════════
+     HERO — Asymmetric split
+     ════════════════════════════════════════════════════════════ -->
+<section class="relative min-h-[92vh] flex items-stretch bg-[#0a0a0a] border-b border-[#1a1a1a]">
 
-    <!-- Features -->
-    <section class="features">
-        <div class="feature-card">
-            <span class="feature-icon">🎨</span>
-            <h3>Original Art</h3>
-            <p>Every design is hand-drawn by our in-house anime artist.</p>
-        </div>
-        <div class="feature-card">
-            <span class="feature-icon">👕</span>
-            <h3>Premium Quality</h3>
-            <p>Heavyweight cotton hoodies and shirts built to last.</p>
-        </div>
-        <div class="feature-card">
-            <span class="feature-icon">📦</span>
-            <h3>Fast Shipping</h3>
-            <p>Orders ship within 2 business days, tracked every step.</p>
-        </div>
-    </section>
-</main>
+    <!-- Noise grain -->
+    <div class="absolute inset-0 opacity-[0.025] pointer-events-none"
+         style="background-image:url('data:image/svg+xml,%3Csvg viewBox=%220 0 256 256%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%224%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E');background-size:200px;">
+    </div>
 
+    <!-- LEFT: type stack -->
+    <div class="relative z-10 flex-1 flex flex-col justify-center
+                px-8 sm:px-12 lg:px-20 xl:px-28 pt-16 pb-20 lg:pt-0 lg:pb-0 max-w-none lg:max-w-[55%]">
+
+        <div class="flex items-center gap-3 mb-8">
+            <div class="w-8 h-[1px] bg-[#e50914]"></div>
+            <span class="font-mono-sharp text-[10px] tracking-[0.35em] text-[#e50914] uppercase">Drop 01 — Limited Series</span>
+        </div>
+
+        <h1 class="font-display leading-[0.85] mb-2 select-none">
+            <span class="block text-white uppercase"
+                  style="font-size:clamp(4.5rem,12vw,9rem);letter-spacing:-0.02em;">OLLY</span>
+            <span class="block text-[#e50914] uppercase relative"
+                  style="font-size:clamp(4.5rem,12vw,9rem);letter-spacing:-0.02em;margin-left:clamp(1rem,4vw,3rem);">
+                THREADS
+                <span class="absolute bottom-1 left-0 right-0 h-[3px] bg-[#e50914] opacity-20"></span>
+            </span>
+        </h1>
+
+        <!-- Signature wordmark under headline -->
+        <p style="font-family:'Pinyon Script',cursive;font-size:clamp(1.8rem,4vw,2.8rem);color:#333;line-height:1;margin-top:0.5rem;margin-bottom:2rem;">
+            by oliver jin wang
+        </p>
+
+        <div class="flex flex-wrap items-center gap-5 mb-16">
+            <a th:href="@{/shop}" class="btn-sharp"><span>Shop Collection</span></a>
+            <a href="https://www.instagram.com/oliver_jin_wang/" target="_blank" rel="noopener noreferrer"
+               class="font-mono-sharp text-[10px] text-[#444] tracking-[0.2em] uppercase hover:text-[#e50914] transition-colors slash-reveal">
+                @oliver_jin_wang
+            </a>
+        </div>
+
+        <!-- Stats -->
+        <div class="flex gap-10 pt-10 border-t border-[#1a1a1a]">
+            <div>
+                <p class="font-display text-white" style="font-size:clamp(2.5rem,7vw,4.5rem);line-height:1;letter-spacing:-0.04em;">01</p>
+                <p class="font-mono-sharp text-[9px] text-[#3a3a3a] tracking-[0.25em] uppercase mt-1">Active Drop</p>
+            </div>
+            <div class="w-[1px] bg-[#1a1a1a]"></div>
+            <div>
+                <p class="font-display text-white" style="font-size:clamp(2.5rem,7vw,4.5rem);line-height:1;letter-spacing:-0.04em;">100<span class="text-[#e50914]">%</span></p>
+                <p class="font-mono-sharp text-[9px] text-[#3a3a3a] tracking-[0.25em] uppercase mt-1">Original Art</p>
+            </div>
+            <div class="w-[1px] bg-[#1a1a1a]"></div>
+            <div>
+                <p class="font-display text-white" style="font-size:clamp(2.5rem,7vw,4.5rem);line-height:1;letter-spacing:-0.04em;">∞</p>
+                <p class="font-mono-sharp text-[9px] text-[#3a3a3a] tracking-[0.25em] uppercase mt-1">No Restocks</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT: clipped product frame -->
+    <div class="hidden lg:flex flex-col justify-center items-center
+                flex-1 relative bg-[#0d0d0d] border-l border-[#1a1a1a] overflow-hidden">
+
+        <div class="absolute inset-0 opacity-[0.035]"
+             style="background-image:linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px);background-size:48px 48px;">
+        </div>
+
+        <div class="relative z-10 w-[70%] max-w-sm">
+            <div class="absolute -top-3 -left-3 w-5 h-5 border-t-2 border-l-2 border-[#e50914]"></div>
+            <div class="absolute -top-3 -right-3 w-5 h-5 border-t-2 border-r-2 border-[#e50914]"></div>
+            <div class="absolute -bottom-3 -left-3 w-5 h-5 border-b-2 border-l-2 border-[#e50914]"></div>
+            <div class="absolute -bottom-3 -right-3 w-5 h-5 border-b-2 border-r-2 border-[#e50914]"></div>
+
+            <div class="clip-diagonal bg-[#141414] aspect-[3/4] overflow-hidden">
+                <th:block th:if="${latestProducts != null and !latestProducts.isEmpty()}">
+                    <img th:if="${latestProducts[0].imageUrl != null}"
+                         th:src="${latestProducts[0].imageUrl}"
+                         th:alt="${latestProducts[0].name}"
+                         class="w-full h-full object-cover card-img"/>
+                    <div th:unless="${latestProducts[0].imageUrl != null}"
+                         class="w-full h-full flex items-center justify-center">
+                        <span style="font-family:'Pinyon Script',cursive;font-size:5rem;color:#1a1a1a;line-height:1;">Olly</span>
+                    </div>
+                </th:block>
+                <div th:if="${latestProducts == null or latestProducts.isEmpty()}"
+                     class="w-full h-full flex items-center justify-center">
+                    <span style="font-family:'Pinyon Script',cursive;font-size:5rem;color:#1a1a1a;line-height:1;">Olly</span>
+                </div>
+            </div>
+
+            <div th:if="${latestProducts != null and !latestProducts.isEmpty()}"
+                 class="absolute bottom-0 left-0 right-0 px-5 py-4 bg-gradient-to-t from-black/90 to-transparent">
+                <span class="font-mono-sharp text-[9px] text-[#e50914] tracking-[0.3em] uppercase block mb-1">Latest Drop</span>
+                <span class="font-display text-white uppercase text-xl leading-tight block"
+                      th:text="${latestProducts[0].name}">Product Name</span>
+            </div>
+        </div>
+
+        <p class="absolute bottom-6 right-6 font-mono-sharp text-[9px] text-[#1e1e1e] tracking-[0.2em] uppercase rotate-90 origin-bottom-right">
+            OT-001 // SERIES ONE
+        </p>
+    </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════
+     LATEST ARRIVALS
+     ════════════════════════════════════════════════════════════ -->
+<section class="bg-[#0a0a0a] py-28 px-6 sm:px-10 lg:px-16 xl:px-24">
+    <div class="max-w-7xl mx-auto">
+
+        <div class="flex items-end justify-between mb-14">
+            <div>
+                <span class="font-mono-sharp text-[10px] text-[#e50914] tracking-[0.3em] uppercase block mb-3">— Latest Arrivals</span>
+                <h2 class="font-display text-white uppercase leading-none"
+                    style="font-size:clamp(2.2rem,5vw,3.8rem);letter-spacing:-0.02em;">New Drops</h2>
+            </div>
+            <a th:href="@{/shop}" class="btn-sharp-red btn-sharp hidden sm:inline-block"><span>View All</span></a>
+        </div>
+
+        <div th:if="${latestProducts == null or latestProducts.isEmpty()}"
+             class="py-24 text-center border-t border-[#1a1a1a]">
+            <p class="font-mono-sharp text-[10px] text-[#2a2a2a] tracking-[0.3em] uppercase">Collection dropping soon.</p>
+        </div>
+
+        <div th:unless="${latestProducts == null or latestProducts.isEmpty()}"
+             class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-[#1a1a1a]">
+
+            <article th:each="product, stat : ${latestProducts}"
+                     class="product-card group relative bg-[#0d0d0d] overflow-hidden"
+                     th:classappend="${stat.index == 1} ? 'lg:mt-12' : ''">
+
+                <a th:href="@{/product/{id}(id=${product.id})}"
+                   class="block overflow-hidden aspect-[4/5] bg-[#111] relative">
+                    <img th:if="${product.imageUrl != null}"
+                         th:src="${product.imageUrl}" th:alt="${product.name}"
+                         loading="lazy"
+                         class="w-full h-full object-cover card-img opacity-90 group-hover:opacity-100 transition-opacity duration-500"/>
+                    <div th:unless="${product.imageUrl != null}"
+                         class="w-full h-full flex items-center justify-center">
+                        <span style="font-family:'Pinyon Script',cursive;font-size:4rem;color:#1a1a1a;">Olly</span>
+                    </div>
+                    <!-- Hover overlay -->
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent
+                                opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-5">
+                        <a th:href="@{/product/{id}(id=${product.id})}" class="btn-sharp text-[11px] inline-block w-full text-center">
+                            <span>Quick View</span>
+                        </a>
+                    </div>
+                </a>
+
+                <div class="px-4 py-5 border-t border-[#1a1a1a] flex items-start justify-between gap-3">
+                    <div>
+                        <span th:if="${product.totalStock == 0}"
+                              class="font-mono-sharp text-[9px] text-[#e50914] tracking-[0.2em] uppercase block mb-1">Sold Out</span>
+                        <span th:if="${product.totalStock > 0 and product.totalStock < 10}"
+                              class="font-mono-sharp text-[9px] text-[#e59000] tracking-[0.2em] uppercase block mb-1">
+                            <span th:text="${product.totalStock}">0</span> left
+                        </span>
+                        <a th:href="@{/product/{id}(id=${product.id})}"
+                           class="font-display text-white uppercase text-base leading-tight slash-reveal hover:text-[#e50914] transition-colors duration-150"
+                           th:text="${product.name}">Product Name</a>
+                    </div>
+                    <span class="font-mono-sharp text-white text-sm font-bold shrink-0"
+                          th:text="'$' + ${#numbers.formatDecimal(product.price,1,2)}">$0.00</span>
+                </div>
+            </article>
+        </div>
+
+        <div class="sm:hidden mt-8 text-center">
+            <a th:href="@{/shop}" class="btn-sharp-red btn-sharp"><span>View All</span></a>
+        </div>
+    </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════
+     MANIFESTO STRIP
+     ════════════════════════════════════════════════════════════ -->
+<section class="bg-[#e50914] py-20 px-6 sm:px-10 overflow-hidden">
+    <div class="max-w-7xl mx-auto relative">
+        <span class="absolute -top-6 right-0 font-display text-black/[0.12] uppercase select-none pointer-events-none"
+              style="font-size:clamp(5rem,18vw,14rem);letter-spacing:-0.04em;line-height:1;">OLLY</span>
+        <div class="relative z-10 max-w-xl">
+            <p class="font-mono-sharp text-[10px] text-black/50 tracking-[0.35em] uppercase mb-5">The Mission</p>
+            <p class="font-display text-black uppercase leading-[0.88] mb-6"
+               style="font-size:clamp(1.8rem,4.5vw,3.2rem);letter-spacing:-0.01em;">
+                Every design is drawn by hand. Every piece is printed to order. No waste. No fakes.
+            </p>
+            <p class="font-mono-sharp text-black/60 text-xs tracking-wide leading-relaxed max-w-sm">
+                Olly Threads exists to bridge original anime art with wearable culture.
+                Designed by <strong>@oliver_jin_wang</strong>, fulfilled on demand — so every unit matters.
+            </p>
+        </div>
+    </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════
+     THE RANGE — Brutalist editorial, borderless, bleeding type
+     ════════════════════════════════════════════════════════════ -->
+<section class="bg-[#0a0a0a] py-32 px-6 sm:px-10 lg:px-16 xl:px-24">
+    <div class="max-w-7xl mx-auto">
+
+        <div class="mb-20">
+            <span class="font-mono-sharp text-[10px] text-[#444] tracking-[0.35em] uppercase block mb-3">— Browse By</span>
+            <h2 class="font-display text-white uppercase leading-none"
+                style="font-size:clamp(2.2rem,5vw,3.8rem);letter-spacing:-0.02em;">The Range</h2>
+        </div>
+
+        <!-- Borderless editorial stack — each row is its own typographic statement -->
+        <div class="space-y-0">
+
+            <!-- HOODIES -->
+            <a th:href="@{/shop(category='HOODIE')}"
+               class="group relative flex items-center justify-between
+                      py-10 border-t border-[#1a1a1a] overflow-hidden
+                      hover:border-[#e50914] transition-colors duration-300">
+                <!-- Massive bleed-off ghost text -->
+                <span class="absolute right-0 top-1/2 -translate-y-1/2
+                             font-display text-white/[0.035] uppercase select-none pointer-events-none
+                             group-hover:text-white/[0.06] transition-colors duration-400 translate-x-[10%]"
+                      style="font-size:clamp(5rem,14vw,11rem);letter-spacing:-0.03em;line-height:1;">HOOD</span>
+                <!-- Left content -->
+                <div class="relative z-10 flex items-center gap-8">
+                    <!-- Thin red accent line -->
+                    <div class="w-12 h-[1px] bg-[#e50914] shrink-0 group-hover:w-20 transition-all duration-300"></div>
+                    <div>
+                        <p class="font-mono-sharp text-[9px] text-[#e50914] tracking-[0.3em] uppercase mb-1">01</p>
+                        <p class="font-display text-white uppercase group-hover:text-[#e50914] transition-colors duration-200"
+                           style="font-size:clamp(2rem,5vw,4rem);letter-spacing:-0.02em;line-height:1;">Hoodies</p>
+                    </div>
+                </div>
+                <!-- Right arrow -->
+                <span class="relative z-10 font-mono-sharp text-[10px] text-[#333] tracking-[0.3em] uppercase shrink-0
+                             group-hover:text-[#e50914] transition-colors duration-200">
+                    Shop →
+                </span>
+            </a>
+
+            <!-- SHIRTS -->
+            <a th:href="@{/shop(category='SHIRT')}"
+               class="group relative flex items-center justify-between
+                      py-10 border-t border-[#1a1a1a] overflow-hidden
+                      hover:border-[#e50914] transition-colors duration-300">
+                <span class="absolute right-0 top-1/2 -translate-y-1/2
+                             font-display text-white/[0.035] uppercase select-none pointer-events-none
+                             group-hover:text-white/[0.06] transition-colors duration-400 translate-x-[10%]"
+                      style="font-size:clamp(5rem,14vw,11rem);letter-spacing:-0.03em;line-height:1;">TEE</span>
+                <div class="relative z-10 flex items-center gap-8">
+                    <div class="w-12 h-[1px] bg-[#e50914] shrink-0 group-hover:w-20 transition-all duration-300"></div>
+                    <div>
+                        <p class="font-mono-sharp text-[9px] text-[#e50914] tracking-[0.3em] uppercase mb-1">02</p>
+                        <p class="font-display text-white uppercase group-hover:text-[#e50914] transition-colors duration-200"
+                           style="font-size:clamp(2rem,5vw,4rem);letter-spacing:-0.02em;line-height:1;">Shirts</p>
+                    </div>
+                </div>
+                <span class="relative z-10 font-mono-sharp text-[10px] text-[#333] tracking-[0.3em] uppercase shrink-0 group-hover:text-[#e50914] transition-colors duration-200">Shop →</span>
+            </a>
+
+            <!-- ACCESSORIES -->
+            <a th:href="@{/shop(category='ACCESSORY')}"
+               class="group relative flex items-center justify-between
+                      py-10 border-t border-[#1a1a1a] overflow-hidden
+                      hover:border-[#e50914] transition-colors duration-300">
+                <span class="absolute right-0 top-1/2 -translate-y-1/2
+                             font-display text-white/[0.035] uppercase select-none pointer-events-none
+                             group-hover:text-white/[0.06] transition-colors duration-400 translate-x-[10%]"
+                      style="font-size:clamp(5rem,14vw,11rem);letter-spacing:-0.03em;line-height:1;">ACC</span>
+                <div class="relative z-10 flex items-center gap-8">
+                    <div class="w-12 h-[1px] bg-[#e50914] shrink-0 group-hover:w-20 transition-all duration-300"></div>
+                    <div>
+                        <p class="font-mono-sharp text-[9px] text-[#e50914] tracking-[0.3em] uppercase mb-1">03</p>
+                        <p class="font-display text-white uppercase group-hover:text-[#e50914] transition-colors duration-200"
+                           style="font-size:clamp(2rem,5vw,4rem);letter-spacing:-0.02em;line-height:1;">Accessories</p>
+                    </div>
+                </div>
+                <span class="relative z-10 font-mono-sharp text-[10px] text-[#333] tracking-[0.3em] uppercase shrink-0 group-hover:text-[#e50914] transition-colors duration-200">Shop →</span>
+            </a>
+
+            <!-- ALL -->
+            <a th:href="@{/shop}"
+               class="group relative flex items-center justify-between
+                      py-10 border-t border-b border-[#1a1a1a] overflow-hidden
+                      hover:border-[#e50914] transition-colors duration-300">
+                <span class="absolute right-0 top-1/2 -translate-y-1/2
+                             font-display text-white/[0.035] uppercase select-none pointer-events-none
+                             group-hover:text-white/[0.06] transition-colors duration-400 translate-x-[10%]"
+                      style="font-size:clamp(5rem,14vw,11rem);letter-spacing:-0.03em;line-height:1;">ALL</span>
+                <div class="relative z-10 flex items-center gap-8">
+                    <div class="w-12 h-[1px] bg-[#e50914] shrink-0 group-hover:w-20 transition-all duration-300"></div>
+                    <div>
+                        <p class="font-mono-sharp text-[9px] text-[#e50914] tracking-[0.3em] uppercase mb-1">04</p>
+                        <p class="font-display text-white uppercase group-hover:text-[#e50914] transition-colors duration-200"
+                           style="font-size:clamp(2rem,5vw,4rem);letter-spacing:-0.02em;line-height:1;">Everything</p>
+                    </div>
+                </div>
+                <span class="relative z-10 font-mono-sharp text-[10px] text-[#333] tracking-[0.3em] uppercase shrink-0 group-hover:text-[#e50914] transition-colors duration-200">Shop →</span>
+            </a>
+
+        </div>
+    </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════
+     ARTIST SECTION — Lookbook editorial value props
+     No boxes. Massive red numbers. Generous breathing room.
+     ════════════════════════════════════════════════════════════ -->
+<section class="bg-[#0d0d0d] py-36 px-6 sm:px-10 lg:px-16 xl:px-24">
+    <div class="max-w-7xl mx-auto grid lg:grid-cols-2 gap-24 items-start">
+
+        <!-- Left: editorial copy -->
+        <div class="lg:sticky lg:top-28">
+            <span class="font-mono-sharp text-[10px] text-[#444] tracking-[0.35em] uppercase block mb-6">— The Artist</span>
+            <h2 class="font-display text-white uppercase leading-[0.88] mb-8"
+                style="font-size:clamp(2.8rem,6vw,5rem);letter-spacing:-0.02em;">
+                Drawn by<br/>
+                <span class="text-[#e50914]">Hand.</span><br/>
+                Worn by<br/>
+                You.
+            </h2>
+            <!-- Signature below the headline -->
+            <p style="font-family:'Pinyon Script',cursive;font-size:2.2rem;color:#2a2a2a;line-height:1;margin-bottom:1.5rem;">
+                oliver jin wang
+            </p>
+            <p class="font-mono-sharp text-[#444] text-xs tracking-wide leading-relaxed max-w-xs mb-10">
+                Every piece starts as original ink on paper. No AI art. No stock assets.
+                Pure anime-inspired illustration — independent and intentional.
+            </p>
+            <a href="https://www.instagram.com/oliver_jin_wang/"
+               target="_blank" rel="noopener noreferrer"
+               class="btn-sharp-red btn-sharp"><span>Follow the Artist</span></a>
+        </div>
+
+        <!-- Right: lookbook numbered list — NO BOXES, massive numbers -->
+        <div class="space-y-0">
+
+            <!-- 01 -->
+            <div class="pt-12 pb-12 border-t border-[#1a1a1a]">
+                <p class="font-display text-[#e50914] leading-none mb-3"
+                   style="font-size:clamp(4rem,10vw,7rem);letter-spacing:-0.04em;line-height:1;">01</p>
+                <p class="font-display text-white uppercase text-2xl leading-none mb-4"
+                   style="letter-spacing:-0.01em;">Original Artwork</p>
+                <p class="font-mono-sharp text-[#3a3a3a] text-xs tracking-wide leading-relaxed max-w-xs">
+                    Each design is hand-drawn by the artist. No templates, no clip art. Every line is intentional.
+                </p>
+            </div>
+
+            <!-- 02 -->
+            <div class="pt-12 pb-12 border-t border-[#1a1a1a]">
+                <p class="font-display text-[#e50914] leading-none mb-3"
+                   style="font-size:clamp(4rem,10vw,7rem);letter-spacing:-0.04em;line-height:1;">02</p>
+                <p class="font-display text-white uppercase text-2xl leading-none mb-4"
+                   style="letter-spacing:-0.01em;">Printed on Demand</p>
+                <p class="font-mono-sharp text-[#3a3a3a] text-xs tracking-wide leading-relaxed max-w-xs">
+                    Fulfilled via Printify on premium-weight blanks. Every order is fresh — made for you.
+                </p>
+            </div>
+
+            <!-- 03 -->
+            <div class="pt-12 pb-12 border-t border-[#1a1a1a]">
+                <p class="font-display text-[#e50914] leading-none mb-3"
+                   style="font-size:clamp(4rem,10vw,7rem);letter-spacing:-0.04em;line-height:1;">03</p>
+                <p class="font-display text-white uppercase text-2xl leading-none mb-4"
+                   style="letter-spacing:-0.01em;">Limited Runs</p>
+                <p class="font-mono-sharp text-[#3a3a3a] text-xs tracking-wide leading-relaxed max-w-xs">
+                    Once a drop ends, it's gone. No restocks — that's the point.
+                </p>
+            </div>
+
+            <!-- 04 -->
+            <div class="pt-12 pb-12 border-t border-b border-[#1a1a1a]">
+                <p class="font-display text-[#e50914] leading-none mb-3"
+                   style="font-size:clamp(4rem,10vw,7rem);letter-spacing:-0.04em;line-height:1;">04</p>
+                <p class="font-display text-white uppercase text-2xl leading-none mb-4"
+                   style="letter-spacing:-0.01em;">Ships Worldwide</p>
+                <p class="font-mono-sharp text-[#3a3a3a] text-xs tracking-wide leading-relaxed max-w-xs">
+                    Global fulfillment network. Tracked from print to your door.
+                </p>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════
+     CLOSING CTA
+     ════════════════════════════════════════════════════════════ -->
+<section class="bg-[#0a0a0a] py-36 px-6 text-center relative overflow-hidden">
+    <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+                 font-display text-white/[0.018] uppercase select-none pointer-events-none"
+          style="font-size:clamp(6rem,22vw,20rem);letter-spacing:-0.05em;white-space:nowrap;">SHOP</span>
+    <div class="relative z-10">
+        <p class="font-mono-sharp text-[#e50914] text-[10px] tracking-[0.45em] uppercase mb-6">Series One — Now Available</p>
+        <h2 class="font-display text-white uppercase mb-10"
+            style="font-size:clamp(3.5rem,9vw,7.5rem);letter-spacing:-0.03em;line-height:0.88;">
+            Don't<br/>Sleep.
+        </h2>
+        <!-- Signature under the CTA -->
+        <p style="font-family:'Pinyon Script',cursive;font-size:2rem;color:#222;line-height:1;margin-bottom:2.5rem;">
+            olly treads
+        </p>
+        <a th:href="@{/shop}" class="btn-sharp text-base px-10 py-4"><span>Enter the Drop</span></a>
+    </div>
+</section>
+
+<!-- ── Footer / scripts ───────────────────────────────────────── -->
 <div th:replace="~{fragments/layout :: footer}"></div>
+<div th:replace="~{fragments/layout :: themeScript}"></div>
+<script type="module" th:src="@{/js/cart.js}"></script>
 
 </body>
 </html>

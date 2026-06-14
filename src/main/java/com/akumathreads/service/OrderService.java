@@ -241,7 +241,7 @@ public class OrderService {
      * @return all orders
      */
     public List<Order> findAllOrders() {
-        return orderRepository.findAllByOrderByCreatedDateDesc();
+        return orderRepository.findAllByOrderByCreatedAtDesc();
     }
 
     /**
