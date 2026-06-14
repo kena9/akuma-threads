@@ -34,14 +34,16 @@ public class SessionCart implements Serializable {
      */
     public void addOrUpdate(Long variantId,
                             String productName,
+                            String sizeName,
                             BigDecimal unitPrice,
                             int quantity) {
         items.merge(
             variantId,
-            new CartEntry(variantId, productName, unitPrice, quantity),
+            new CartEntry(variantId, productName, sizeName, unitPrice, quantity),
             (existing, incoming) -> new CartEntry(
                 variantId,
                 productName,
+                sizeName,
                 unitPrice,
                 existing.quantity() + incoming.quantity()
             )
@@ -104,6 +106,7 @@ public class SessionCart implements Serializable {
     public record CartEntry(
             Long variantId,
             String productName,
+            String sizeName,
             BigDecimal unitPrice,
             int quantity
     ) implements Serializable {

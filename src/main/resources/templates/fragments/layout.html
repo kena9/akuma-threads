@@ -58,6 +58,9 @@
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
 
     <link rel="stylesheet" th:href="@{/css/main.css}"/>
+
+    <!-- Cart badge initialises on every page load and exposes addToCart / removeFromCart globally -->
+    <script type="module" th:src="@{/js/cart.js}"></script>
 </head>
 
 <!--

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      class="dark">
+
+<head th:replace="~{fragments/layout :: head('Cart')}"></head>
+
+<body class="bg-[#0a0a0a] text-white min-h-screen flex flex-col">
+
+<div th:replace="~{fragments/layout :: navbar}"></div>
+
+<!-- Load cart.js so removeFromCart() is available via window -->
+<script type="module" th:src="@{/js/cart.js}"></script>
+
+<main class="flex-1 max-w-5xl mx-auto w-full px-6 sm:px-10 py-14">
+
+    <!-- ── Page header ──────────────────────────────────────────────────────── -->
+    <div class="mb-12 border-b border-[#1a1a1a] pb-8">
+        <p class="font-mono text-[10px] tracking-[0.35em] uppercase text-[#e50914] mb-3">
+            Olly Threads
+        </p>
+        <h1 style="font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+                   font-size: clamp(2.5rem, 6vw, 4.5rem);
+                   line-height: 0.9;
+                   letter-spacing: -0.02em;">
+            YOUR CART
+        </h1>
+    </div>
+
+    <!-- ── Empty state ──────────────────────────────────────────────────────── -->
+    <div th:if="${cart.empty}"
+         class="flex flex-col items-center justify-center py-24 text-center">
+        <div class="border border-[#1a1a1a] w-24 h-24 flex items-center justify-center mb-8">
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none" class="opacity-20">
+                <path d="M4 4h4l4 16h16l4-12H10" stroke="white" stroke-width="2" stroke-linecap="square"/>
+                <circle cx="16" cy="28" r="2" fill="white"/>
+                <circle cx="26" cy="28" r="2" fill="white"/>
+            </svg>
+        </div>
+        <p style="font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+                  font-size: 1.6rem; letter-spacing: 0.02em;"
+           class="text-white uppercase mb-3">YOUR CART IS EMPTY</p>
+        <p class="font-mono text-[11px] text-[#444] tracking-[0.1em] mb-8">
+            Add some pieces and come back.
+        </p>
+        <a th:href="@{/shop}"
+           class="font-mono text-[11px] tracking-[0.25em] uppercase font-bold
+                  bg-[#e50914] text-white px-10 py-4
+                  hover:bg-[#b8070f] transition-colors duration-200">
+            BROWSE THE SHOP
+        </a>
+    </div>
+
+    <!-- ── Cart table ───────────────────────────────────────────────────────── -->
+    <div th:unless="${cart.empty}">
+
+        <!-- Column headers (desktop only) -->
+        <div class="hidden sm:grid grid-cols-12 gap-4 pb-3 border-b border-[#1a1a1a]
+                    font-mono text-[9px] tracking-[0.3em] uppercase text-[#333]">
+            <div class="col-span-6">ITEM</div>
+            <div class="col-span-2 text-center">SIZE</div>
+            <div class="col-span-2 text-center">QTY</div>
+            <div class="col-span-1 text-right">PRICE</div>
+            <div class="col-span-1"></div>
+        </div>
+
+        <!-- Line items -->
+        <div id="cart-items">
+            <div th:each="item : ${cart.items}"
+                 th:data-variant-id="${item.variantId}"
+                 class="grid grid-cols-12 gap-4 items-center py-5 border-b border-[#1a1a1a]">
+
+                <!-- Product name -->
+                <div class="col-span-10 sm:col-span-6">
+                    <p class="font-mono text-[12px] tracking-[0.05em] uppercase font-bold text-white"
+                       th:text="${item.productName}">Product</p>
+                    <p class="font-mono text-[10px] text-[#444] mt-1 sm:hidden">
+                        SIZE: <span th:text="${item.sizeName}">M</span>
+                        &nbsp;·&nbsp; QTY: <span th:text="${item.quantity}">1</span>
+                    </p>
+                </div>
+
+                <!-- Size (desktop) -->
+                <div class="hidden sm:flex col-span-2 justify-center">
+                    <span class="font-mono text-[10px] tracking-[0.2em] uppercase
+                                 border border-[#222] text-[#666] px-2 py-1"
+                          th:text="${item.sizeName}">M</span>
+                </div>
+
+                <!-- Qty (desktop) -->
+                <div class="hidden sm:flex col-span-2 justify-center">
+                    <span class="font-mono text-[12px] text-white"
+                          th:text="${item.quantity}">1</span>
+                </div>
+
+                <!-- Line price -->
+                <div class="col-span-2 sm:col-span-1 text-right">
+                    <p class="font-mono text-[12px] font-bold text-white"
+                       th:text="'$' + ${#numbers.formatDecimal(item.unitPrice.multiply(T(java.math.BigDecimal).valueOf(item.quantity)), 1, 2)}">
+                        $0.00
+                    </p>
+                    <p class="font-mono text-[9px] text-[#333] mt-0.5"
+                       th:text="'$' + ${#numbers.formatDecimal(item.unitPrice, 1, 2)} + ' ea.'">
+                        $0.00 ea.
+                    </p>
+                </div>
+
+                <!-- Remove button -->
+                <div class="col-span-12 sm:col-span-1 flex sm:justify-end">
+                    <button type="button"
+                            th:onclick="'removeFromCart(' + ${item.variantId} + ')'"
+                            aria-label="Remove item"
+                            class="font-mono text-[9px] tracking-[0.2em] uppercase text-[#333]
+                                   hover:text-[#e50914] transition-colors duration-200 py-1">
+                        REMOVE
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Summary row ───────────────────────────────────────────────────── -->
+        <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-8 pt-8 mt-2">
+
+            <!-- Continue shopping -->
+            <a th:href="@{/shop}"
+               class="font-mono text-[10px] tracking-[0.2em] uppercase text-[#444]
+                      hover:text-white transition-colors duration-200 self-start">
+                ← CONTINUE SHOPPING
+            </a>
+
+            <!-- Totals + checkout -->
+            <div class="sm:w-72 space-y-4">
+
+                <div class="flex items-center justify-between border-t border-[#1a1a1a] pt-4">
+                    <p class="font-mono text-[10px] tracking-[0.2em] uppercase text-[#444]">SUBTOTAL</p>
+                    <p class="font-mono text-[14px] font-bold text-white"
+                       th:text="'$' + ${#numbers.formatDecimal(cart.subtotal(), 1, 2)}">$0.00</p>
+                </div>
+
+                <div class="flex items-center justify-between border-t border-[#1a1a1a] pt-4">
+                    <p class="font-mono text-[10px] tracking-[0.2em] uppercase text-[#444]">SHIPPING</p>
+                    <p class="font-mono text-[10px] text-[#444]">Calculated at checkout</p>
+                </div>
+
+                <div class="flex items-end justify-between border-t border-[#e50914] pt-4">
+                    <p style="font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+                               font-size: 1rem; letter-spacing: 0.05em;"
+                       class="text-white uppercase">ORDER TOTAL</p>
+                    <p style="font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+                               font-size: 1.8rem;"
+                       class="text-white"
+                       th:text="'$' + ${#numbers.formatDecimal(cart.subtotal(), 1, 2)}">$0.00</p>
+                </div>
+
+                <!-- Checkout CTA — only for logged-in users -->
+                <sec:authorize access="isAuthenticated()">
+                    <a th:href="@{/checkout}"
+                       class="block w-full font-mono text-[11px] tracking-[0.25em] uppercase font-bold
+                              bg-[#e50914] text-white px-8 py-4 text-center
+                              hover:bg-[#b8070f] transition-colors duration-200">
+                        PROCEED TO CHECKOUT
+                    </a>
+                </sec:authorize>
+
+                <!-- Not logged in — prompt to log in -->
+                <sec:authorize access="!isAuthenticated()">
+                    <a th:href="@{/login}"
+                       class="block w-full font-mono text-[11px] tracking-[0.25em] uppercase font-bold
+                              border border-[#e50914] text-[#e50914] px-8 py-4 text-center
+                              hover:bg-[#e50914] hover:text-white transition-colors duration-200">
+                        LOG IN TO CHECKOUT
+                    </a>
+                    <p class="font-mono text-[9px] text-[#333] tracking-[0.1em] text-center">
+                        Your cart is saved for this session.
+                    </p>
+                </sec:authorize>
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+<div th:replace="~{fragments/layout :: themeScript}"></div>
+
+</body>
+</html>

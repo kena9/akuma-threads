@@ -93,6 +93,7 @@ public class CartRestController {
         cart.addOrUpdate(
                 variant.getId(),
                 variant.getProduct().getName(),
+                variant.getSize().name(),
                 variant.getProduct().getPrice(),
                 request.quantity()
         );
