@@ -97,7 +97,7 @@
                 <!-- Line price -->
                 <div class="col-span-2 sm:col-span-1 text-right">
                     <p class="font-mono text-[12px] font-bold text-white"
-                       th:text="'$' + ${#numbers.formatDecimal(item.unitPrice.multiply(T(java.math.BigDecimal).valueOf(item.quantity)), 1, 2)}">
+                       th:text="'$' + ${#numbers.formatDecimal(item.lineTotal(), 1, 2)}">
                         $0.00
                     </p>
                     <p class="font-mono text-[9px] text-[#333] mt-0.5"

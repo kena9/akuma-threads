@@ -1,35 +1,43 @@
 /**
- * cart.js — Async cart operations for Akuma Threads.
+ * cart.js — Async cart operations for Olly Threads.
  *
  * ES Module. Import via:
  *   <script type="module" src="/js/cart.js"></script>
  *
- * The CSRF token is read from <meta name="_csrf"> in the document head,
- * which Thymeleaf + Spring Security populate automatically.
+ * CSRF token is read from the XSRF-TOKEN cookie written by Spring Security's
+ * CookieCsrfTokenRepository (httpOnly=false). This avoids the race condition
+ * where HttpSessionCsrfTokenRepository hadn't yet initialised the token before
+ * the first JS fetch. Falls back to the <meta name="_csrf"> tag if no cookie.
  */
 
 // ── CSRF ─────────────────────────────────────────────────────────────────────
 
 /**
- * Reads the CSRF token value from the <meta name="_csrf"> tag injected by
- * Thymeleaf. Required on all state-mutating fetch calls.
+ * Reads the CSRF token value.
  *
- * @returns {string} the token, or an empty string if the meta tag is absent
+ * Primary: XSRF-TOKEN cookie (CookieCsrfTokenRepository, httpOnly=false).
+ * Fallback: <meta name="_csrf"> tag (legacy belt-and-suspenders).
+ *
+ * @returns {string} the CSRF token
  */
 export function getCsrfToken() {
+    const cookie = document.cookie.split('; ').find(c => c.startsWith('XSRF-TOKEN='));
+    if (cookie) return decodeURIComponent(cookie.split('=')[1]);
     const meta = document.querySelector('meta[name="_csrf"]');
     return meta ? meta.getAttribute('content') : '';
 }
 
 /**
- * Reads the CSRF header name from <meta name="_csrf_header">.
- * Spring Security defaults to 'X-CSRF-TOKEN'.
+ * Returns the CSRF header name.
+ *
+ * CookieCsrfTokenRepository uses X-XSRF-TOKEN by convention.
+ * Falls back to the meta tag value for legacy compatibility.
  *
  * @returns {string}
  */
 export function getCsrfHeader() {
     const meta = document.querySelector('meta[name="_csrf_header"]');
-    return meta ? meta.getAttribute('content') : 'X-CSRF-TOKEN';
+    return (meta && meta.getAttribute('content')) || 'X-XSRF-TOKEN';
 }
 
 // ── Cart badge ────────────────────────────────────────────────────────────────
@@ -55,11 +63,13 @@ export function updateCartBadge(count) {
 // ── Toast notifications ───────────────────────────────────────────────────────
 
 /**
- * Displays a fixed-position toast notification at the bottom-right of the screen.
- * Auto-removes itself after 3500 ms with a CSS transition fade-out.
+ * Displays a fixed-position brand toast at the bottom-right of the screen.
+ *
+ * Design: sharp corners, mono font, dark bg (#111) with a 2px left border
+ * (green for success, crimson for error). Auto-removes after 3500 ms.
  *
  * @param {string} message - text to display
- * @param {'success'|'error'} type - controls background colour
+ * @param {'success'|'error'} type - controls accent border colour
  */
 export function showToast(message, type = 'success') {
     // Prevent stacking — remove any existing toast first
@@ -73,36 +83,46 @@ export function showToast(message, type = 'success') {
     toast.setAttribute('role', 'status');
     toast.setAttribute('aria-live', 'polite');
 
-    // Base Tailwind classes
-    const base = [
-        'fixed', 'bottom-6', 'right-6', 'z-50',
-        'px-5', 'py-3', 'rounded-xl', 'shadow-2xl',
-        'text-white', 'font-semibold', 'text-sm',
-        'transition-all', 'duration-300',
-        'opacity-0', 'translate-y-3'
-    ];
+    // Sharp mono notification — no rounded corners, left accent border
+    const borderColor = type === 'success' ? '#22c55e' : '#e50914';
+    Object.assign(toast.style, {
+        position:       'fixed',
+        bottom:         '1.5rem',
+        right:          '1.5rem',
+        zIndex:         '9999',
+        background:     '#111',
+        borderLeft:     `3px solid ${borderColor}`,
+        color:          '#ffffff',
+        fontFamily:     '"Courier New", "Lucida Console", monospace',
+        fontSize:       '11px',
+        fontWeight:     '700',
+        letterSpacing:  '0.12em',
+        textTransform:  'uppercase',
+        padding:        '0.75rem 1.25rem',
+        boxShadow:      '0 4px 24px rgba(0,0,0,0.6)',
+        opacity:        '0',
+        transform:      'translateY(8px)',
+        transition:     'opacity 0.25s ease, transform 0.25s ease',
+        cursor:         'pointer',
+        maxWidth:       '320px',
+        lineHeight:     '1.4'
+    });
 
-    // Type-specific colour
-    const colour = type === 'success'
-        ? ['bg-green-600']
-        : ['bg-red-600'];
-
-    toast.classList.add(...base, ...colour);
     toast.textContent = message;
     document.body.appendChild(toast);
 
     // Trigger enter animation on next frame
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-            toast.classList.remove('opacity-0', 'translate-y-3');
-            toast.classList.add('opacity-100', 'translate-y-0');
+            toast.style.opacity   = '1';
+            toast.style.transform = 'translateY(0)';
         });
     });
 
     // Schedule exit animation then removal
     const exitTimer = setTimeout(() => {
-        toast.classList.remove('opacity-100', 'translate-y-0');
-        toast.classList.add('opacity-0', 'translate-y-3');
+        toast.style.opacity   = '0';
+        toast.style.transform = 'translateY(8px)';
         setTimeout(() => toast.remove(), 300);
     }, 3500);
 
@@ -192,7 +212,7 @@ export async function removeFromCart(variantId) {
 // ── Init: populate badge on page load ─────────────────────────────────────────
 
 /**
- * Fetches the cart count on DOMContentLoaded so the navbar badge is accurate
+ * Fetches the cart count on page load so the navbar badge is accurate
  * immediately, even without any user interaction.
  * Fails silently — a missing badge is acceptable; a broken page is not.
  */
@@ -208,30 +228,7 @@ export async function removeFromCart(variantId) {
     }
 })();
 
-/*
- * ── Thymeleaf product card snippet ────────────────────────────────────────────
- *
- * Include the following in any product card template to wire up the add-to-cart
- * button. Replace th:attr expressions with the actual Thymeleaf field names.
- *
- * In the page <head> (via fragments/layout :: head):
- *   <meta name="_csrf"        th:content="${_csrf.token}"/>
- *   <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
- *   <script type="module" src="/js/cart.js"></script>
- *
- * Add-to-cart button:
- *   <button type="button"
- *           th:attr="onclick='addToCart(' + ${product.id} + ',' + ${product.defaultVariantId} + ',1)'"
- *           aria-label="Add to cart">
- *       Add to Cart
- *   </button>
- *
- * Note: because cart.js is a module, addToCart is not on window by default.
- * Expose it with:  window.addToCart = addToCart;  at the bottom of this file
- * so inline onclick handlers can reach it.
- */
-
 // Expose module functions on window so Thymeleaf onclick attributes can call them
-window.addToCart     = addToCart;
+window.addToCart      = addToCart;
 window.removeFromCart = removeFromCart;
 window.showToast      = showToast;

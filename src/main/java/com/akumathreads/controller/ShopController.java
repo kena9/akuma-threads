@@ -68,19 +68,26 @@ public class ShopController {
 
         Pageable pageable = PageRequest.of(Math.max(page, 0), PAGE_SIZE, jpaSort);
 
+        // Clamp price bounds — negative values are semantically nonsense and are
+        // treated as "no bound" rather than rejected outright (graceful degradation).
+        // ProductSpecification uses JPA Criteria API, so there is no SQL-injection risk
+        // regardless, but negative values would return 0 results which is confusing UX.
+        BigDecimal effectiveMin = (minPrice != null && minPrice.compareTo(BigDecimal.ZERO) < 0) ? null : minPrice;
+        BigDecimal effectiveMax = (maxPrice != null && maxPrice.compareTo(BigDecimal.ZERO) < 0) ? null : maxPrice;
+
         // Execute filtered, paginated query — variants loaded via @BatchSize (no N+1)
         Page<Product> productPage = productService.findFiltered(
-                blankToNull(keyword), category, minPrice, maxPrice, pageable);
+                blankToNull(keyword), category, effectiveMin, effectiveMax, pageable);
 
         // ── Thymeleaf model ───────────────────────────────────────────────────
         model.addAttribute("products",    productPage.getContent());
         model.addAttribute("productPage", productPage);
 
-        // Active filter values — reflected back into form inputs
+        // Active filter values — reflected back into form inputs (use effective values after clamping)
         model.addAttribute("keyword",   keyword);
         model.addAttribute("category",  category);
-        model.addAttribute("minPrice",  minPrice);
-        model.addAttribute("maxPrice",  maxPrice);
+        model.addAttribute("minPrice",  effectiveMin);
+        model.addAttribute("maxPrice",  effectiveMax);
         model.addAttribute("sort",      sort);
 
         // Available categories for the sidebar filter

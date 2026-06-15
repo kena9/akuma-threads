@@ -2,6 +2,7 @@ package com.akumathreads.dto;
 
 import com.akumathreads.model.Product;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -42,10 +43,21 @@ public class ProductFormDto {
 
     // ── Per-size stock quantities ─────────────────────────────────────────────
 
+    @Min(value = 0, message = "XS stock cannot be negative")
     private Integer stockXs  = 0;
+
+    @Min(value = 0, message = "S stock cannot be negative")
     private Integer stockS   = 0;
+
+    @Min(value = 0, message = "M stock cannot be negative")
     private Integer stockM   = 0;
+
+    @Min(value = 0, message = "L stock cannot be negative")
     private Integer stockL   = 0;
+
+    @Min(value = 0, message = "XL stock cannot be negative")
     private Integer stockXl  = 0;
+
+    @Min(value = 0, message = "XXL stock cannot be negative")
     private Integer stockXxl = 0;
 }

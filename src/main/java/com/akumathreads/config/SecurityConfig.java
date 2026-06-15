@@ -17,6 +17,8 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
 
@@ -29,7 +31,7 @@ public class SecurityConfig {
             "default-src 'self'; " +
             // Tailwind CDN is our only permitted external script source.
             // In production, replace with a compiled Tailwind build and remove this entry.
-            "script-src 'self' https://cdn.tailwindcss.com; " +
+            "script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; " +
             // 'unsafe-inline' required for Tailwind's runtime JIT style injection.
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
             "img-src 'self' data: https:; " +
@@ -51,6 +53,15 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+            // ── CSRF — cookie-backed so JS can always read a fresh token ────────
+            // CookieCsrfTokenRepository writes XSRF-TOKEN (httpOnly=false so JS can read it).
+            // CsrfTokenRequestAttributeHandler resolves the token from the cookie on every request.
+            // JS reads it via getCsrfToken() in cart.js and sends it as X-XSRF-TOKEN header.
+            .csrf(csrf -> csrf
+                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+            )
+
             // ── Authorization rules ──────────────────────────────────────────
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
@@ -59,9 +70,10 @@ public class SecurityConfig {
                     "/privacy-policy", "/terms-of-service", "/refund-and-shipping",
                     "/css/**", "/js/**", "/img/**", "/images/**", "/error"
                 ).permitAll()
-                // Cart is session-based — guests can add items freely; login is only required at checkout
+                // Cart API — guests may add items; login is required only at checkout
                 .requestMatchers("/api/cart/**").permitAll()
-                .requestMatchers("/account/**", "/checkout/**", "/orders/**", "/order/**").authenticated()
+                // Cart page is auth-only (consistent: navbar Cart link is auth-only too)
+                .requestMatchers("/cart", "/account/**", "/checkout/**", "/orders/**", "/order/**").authenticated()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )

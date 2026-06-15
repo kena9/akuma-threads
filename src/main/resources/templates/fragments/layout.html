@@ -14,7 +14,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <!-- CSP is enforced by Spring Security SecurityConfig — this meta tag is a belt-and-suspenders hint for browsers that read it before the HTTP header. -->
     <meta http-equiv="Content-Security-Policy"
-          content="default-src 'self'; script-src 'self' https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; frame-ancestors 'none'; form-action 'self'"/>
+          content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; frame-ancestors 'none'; form-action 'self'"/>
 
     <title th:text="${title} + ' — Olly Threads'">Olly Threads</title>
 
@@ -70,7 +70,8 @@
   ============================================================
 -->
 <nav th:fragment="navbar"
-     class="sticky top-0 z-50 bg-[#0a0a0a] border-b border-[#1a1a1a]">
+     id="main-navbar"
+     class="sticky top-0 z-50 bg-[#0a0a0a] border-b border-[#1a1a1a] transition-all duration-300">
     <div class="max-w-7xl mx-auto px-6 sm:px-10 h-16 flex items-center justify-between">
 
         <!-- Brand — actual handwritten signature image, inverted to white -->
@@ -217,6 +218,27 @@
             localStorage.setItem('olly-theme', 'dark');
         }
     }
+
+    // ── Navbar scroll state ──────────────────────────────────────────────────
+    // At the top: clean thin border (#1a1a1a), fully opaque bg.
+    // After 20px scroll: stronger border (#333) + light backdrop-blur for depth.
+    (function () {
+        var navbar = document.getElementById('main-navbar');
+        if (!navbar) return;
+        function onScroll() {
+            if (window.scrollY > 20) {
+                navbar.style.borderBottomColor = '#333';
+                navbar.style.backdropFilter    = 'blur(4px)';
+                navbar.style.backgroundColor   = 'rgba(10,10,10,0.92)';
+            } else {
+                navbar.style.borderBottomColor = '#1a1a1a';
+                navbar.style.backdropFilter    = 'none';
+                navbar.style.backgroundColor   = '#0a0a0a';
+            }
+        }
+        window.addEventListener('scroll', onScroll, { passive: true });
+        onScroll(); // initialise correctly on pages that load already scrolled
+    })();
 </script>
 
 </html>

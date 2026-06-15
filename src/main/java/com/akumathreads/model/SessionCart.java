@@ -112,5 +112,11 @@ public class SessionCart implements Serializable {
     ) implements Serializable {
         @Serial
         private static final long serialVersionUID = 1L;
+
+        /** Line total — unit price × quantity, rounded to 2dp. */
+        public BigDecimal lineTotal() {
+            return unitPrice.multiply(BigDecimal.valueOf(quantity))
+                            .setScale(2, RoundingMode.HALF_UP);
+        }
     }
 }
