@@ -1,5 +1,6 @@
 package com.akumathreads.controller;
 
+import com.akumathreads.dto.ProductCardDto;
 import com.akumathreads.model.Product;
 import com.akumathreads.repository.OrderRepository;
 import com.akumathreads.service.ProductService;
@@ -51,14 +52,14 @@ public class ShopController {
         BigDecimal effectiveMin = (minPrice != null && minPrice.compareTo(BigDecimal.ZERO) < 0) ? null : minPrice;
         BigDecimal effectiveMax = (maxPrice != null && maxPrice.compareTo(BigDecimal.ZERO) < 0) ? null : maxPrice;
 
-        Page<Product> productPage = productService.findFiltered(
+        Page<ProductCardDto> productPage = productService.findFiltered(
                 blankToNull(keyword), category, effectiveMin, effectiveMax, pageable);
 
         // Social proof — batch sold count for the page (single query)
-        List<Product> pageProducts = productPage.getContent();
+        List<ProductCardDto> pageProducts = productPage.getContent();
         Map<Long, Long> soldCountMap = new HashMap<>();
         if (!pageProducts.isEmpty()) {
-            List<Long> ids = pageProducts.stream().map(Product::getId).collect(Collectors.toList());
+            List<Long> ids = pageProducts.stream().map(ProductCardDto::getId).collect(Collectors.toList());
             for (Object[] row : orderRepository.countUnitsSoldByProductIds(ids)) {
                 soldCountMap.put((Long) row[0], (Long) row[1]);
             }

@@ -13,6 +13,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.NamedAttributeNode;
 import jakarta.persistence.NamedEntityGraph;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
@@ -49,7 +50,13 @@ import java.util.List;
  * so calling {@code productRepository.delete(product)} never physically removes a row.
  */
 @Entity
-@Table(name = "products")
+@Table(name = "products", indexes = {
+    @Index(name = "idx_products_category",     columnList = "category"),
+    @Index(name = "idx_products_active",       columnList = "active"),
+    @Index(name = "idx_products_deleted",      columnList = "deleted"),
+    @Index(name = "idx_products_created_date", columnList = "created_date DESC"),
+    @Index(name = "idx_products_price",        columnList = "price")
+})
 @Getter
 @Setter
 @NoArgsConstructor

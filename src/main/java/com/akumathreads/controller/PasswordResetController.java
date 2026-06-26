@@ -2,7 +2,9 @@ package com.akumathreads.controller;
 
 import com.akumathreads.service.EmailService;
 import com.akumathreads.service.UserService;
+import com.github.benmanes.caffeine.cache.Cache;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -11,18 +13,33 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 /**
  * Handles the forgot-password / reset-password flow.
  *
- * <p>POST /forgot-password → creates token, emails link (always shows same success message
+ * <p>POST /forgot-password → creates token, emails link (always shows the same success message
  * regardless of whether the account exists, to prevent user enumeration).
+ *
+ * <p>Rate-limited to 5 requests per email address per hour (P2-9 fix) using the
+ * {@code forgotPasswordCache} Caffeine bean. Exceeding the limit returns the same neutral
+ * message to avoid leaking rate-limit information to an attacker.
  *
  * <p>GET  /reset-password?token=…  → shows the new-password form.
  * <p>POST /reset-password          → validates token, hashes + saves new password.
  */
 @Controller
-@RequiredArgsConstructor
 public class PasswordResetController {
 
-    private final UserService  userService;
-    private final EmailService emailService;
+    private static final int MAX_REQUESTS_PER_HOUR = 5;
+
+    private final UserService              userService;
+    private final EmailService             emailService;
+    private final Cache<String, Integer>   forgotPasswordCache;
+
+    public PasswordResetController(UserService userService,
+                                   EmailService emailService,
+                                   @Qualifier("forgotPasswordCache")
+                                   Cache<String, Integer> forgotPasswordCache) {
+        this.userService         = userService;
+        this.emailService        = emailService;
+        this.forgotPasswordCache = forgotPasswordCache;
+    }
 
     // ── Forgot password ───────────────────────────────────────────────────────
 
@@ -34,11 +51,25 @@ public class PasswordResetController {
     @PostMapping("/forgot-password")
     public String sendResetLink(@RequestParam String email,
                                 RedirectAttributes ra) {
+
+        // Rate limit: 5 requests per email per hour (P2-9 fix)
+        String key   = email.toLowerCase().strip();
+        int    count = forgotPasswordCache.asMap()
+                .merge(key, 1, Integer::sum);
+
+        if (count > MAX_REQUESTS_PER_HOUR) {
+            // Same neutral message — don't reveal that they were rate-limited
+            ra.addFlashAttribute("successMsg",
+                    "If an account with that email exists, you'll receive a reset link shortly.");
+            return "redirect:/forgot-password";
+        }
+
         // Create token (null = email not found — we don't tell the user which)
         String token = userService.createPasswordResetToken(email);
         if (token != null) {
             emailService.sendPasswordResetEmail(email, token);
         }
+
         // Always show the same message to prevent user enumeration
         ra.addFlashAttribute("successMsg",
                 "If an account with that email exists, you'll receive a reset link shortly.");
@@ -49,7 +80,6 @@ public class PasswordResetController {
 
     @GetMapping("/reset-password")
     public String resetPasswordPage(@RequestParam String token, Model model) {
-        // Validate the token before showing the form
         boolean valid = userService.validateResetToken(token).isPresent();
         model.addAttribute("token", token);
         model.addAttribute("valid", valid);

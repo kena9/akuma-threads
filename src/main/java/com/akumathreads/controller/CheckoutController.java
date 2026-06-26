@@ -7,6 +7,7 @@ import com.akumathreads.model.DiscountCode;
 import com.akumathreads.model.Order;
 import com.akumathreads.model.SessionCart;
 import com.akumathreads.model.User;
+import com.akumathreads.pricing.CartPricing;
 import com.akumathreads.service.DiscountCodeService;
 import com.akumathreads.service.OrderService;
 import com.akumathreads.service.StripeService;
@@ -14,19 +15,17 @@ import com.akumathreads.service.UserService;
 import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
 import jakarta.servlet.http.HttpSession;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -35,6 +34,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Checkout flow controller.
+ *
+ * <h2>Flow (P0-2 / P0-3 fix — order created at PI time)</h2>
+ * <ol>
+ *   <li>GET /checkout — render the checkout form.</li>
+ *   <li>POST /checkout/payment-intent (AJAX) — compute pricing via {@link CartPricing},
+ *       create the Stripe PaymentIntent, then immediately create a PENDING order and
+ *       reserve stock. Stores {@code pendingOrderId} and {@code pendingPaymentIntentId}
+ *       in the session.</li>
+ *   <li>Browser calls {@code stripe.confirmCardPayment} — card never touches our server.</li>
+ *   <li>POST /checkout (form submit) — verifies the PI is succeeded, transitions the
+ *       PENDING order to PAID, clears the cart, redirects to order confirmation.</li>
+ *   <li>Stripe webhook (async) — transitions PAID → PROCESSING, sends confirmation
+ *       email, pushes to Printful, redeems the discount code.</li>
+ * </ol>
+ */
 @Controller
 @RequiredArgsConstructor
 @Slf4j
@@ -44,10 +60,6 @@ public class CheckoutController {
     private final UserService         userService;
     private final DiscountCodeService discountCodeService;
     private final StripeService       stripeService;
-
-    private static final BigDecimal FREE_SHIPPING_THRESHOLD = new BigDecimal("75.00");
-    private static final BigDecimal SHIPPING_RATE           = new BigDecimal("8.99");
-    private static final BigDecimal TAX_RATE                = new BigDecimal("0.08");
 
     // ── GET /checkout ──────────────────────────────────────────────────────────
 
@@ -69,25 +81,40 @@ public class CheckoutController {
 
     // ── POST /checkout/payment-intent (AJAX) ──────────────────────────────────
 
+    /**
+     * Creates a Stripe PaymentIntent and a PENDING order (with stock reserved) in one
+     * atomic step. Returns pricing breakdown for the JS to update the displayed totals.
+     *
+     * <p>All shipping fields are accepted here so the Order can be fully populated
+     * before the customer enters card details. If PI creation or order creation fails,
+     * a JSON error is returned and no charge is initiated.
+     */
     @PostMapping("/checkout/payment-intent")
     @PreAuthorize("isAuthenticated()")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> createPaymentIntent(
             @RequestParam String email,
+            @RequestParam(required = false, defaultValue = "") String fullName,
+            @RequestParam(required = false, defaultValue = "") String address,
+            @RequestParam(required = false, defaultValue = "") String address2,
+            @RequestParam(required = false, defaultValue = "") String city,
+            @RequestParam(required = false, defaultValue = "") String state,
+            @RequestParam(required = false, defaultValue = "") String zip,
+            @RequestParam(required = false, defaultValue = "US") String country,
             @RequestParam(required = false, defaultValue = "") String couponCode,
+            @AuthenticationPrincipal UserDetails principal,
             HttpSession session) {
 
         SessionCart cart = resolveCart(session);
         if (cart.isEmpty())
-            return ResponseEntity.badRequest().body(Map.of("error", "Cart is empty"));
+            return err("Cart is empty");
 
+        // Compute subtotal from cart
         BigDecimal subtotal = cart.getItems().stream()
                 .map(e -> e.unitPrice().multiply(BigDecimal.valueOf(e.quantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal shipping = subtotal.compareTo(FREE_SHIPPING_THRESHOLD) >= 0
-                ? BigDecimal.ZERO : SHIPPING_RATE;
-
+        // Resolve coupon discount
         BigDecimal discount    = BigDecimal.ZERO;
         boolean    couponValid = false;
         String     resolvedCode = null;
@@ -105,38 +132,63 @@ public class CheckoutController {
             }
         }
 
-        BigDecimal taxBase = subtotal.subtract(discount).add(shipping).max(BigDecimal.ZERO);
-        BigDecimal tax     = taxBase.multiply(TAX_RATE).setScale(2, RoundingMode.HALF_UP);
-        BigDecimal total   = taxBase.add(tax).setScale(2, RoundingMode.HALF_UP);
+        // Centralised pricing (P0-4 / P3-5 fix)
+        CartPricing.PricingBreakdown pricing = CartPricing.compute(subtotal, discount);
 
-        if (total.compareTo(new BigDecimal("0.50")) < 0)
-            return ResponseEntity.badRequest().body(Map.of("error", "Order total below minimum ($0.50)"));
+        if (pricing.total().compareTo(new BigDecimal("0.50")) < 0)
+            return err("Order total below minimum ($0.50)");
 
+        // Retrieve authenticated user
+        User user = userService.findByEmail(principal.getUsername())
+                .orElseThrow(() -> new IllegalStateException("Authenticated user not found"));
+
+        // Build item list from cart
+        List<OrderItemRequest> orderItems = cart.getItems().stream()
+                .map(e -> new OrderItemRequest(e.variantId(), e.quantity()))
+                .collect(Collectors.toList());
+
+        // Build combined address
+        String fullAddress = address2 != null && !address2.isBlank()
+                ? address + ", " + address2 : address;
+
+        // Step 1: Create Stripe PaymentIntent
+        PaymentIntent intent;
         try {
-            PaymentIntent intent = stripeService.createPaymentIntent(total, email);
-
-            // Stash in session — POST /checkout verifies these
-            session.setAttribute("pendingPaymentIntentId", intent.getId());
-            session.setAttribute("pendingOrderTotal",      total);
-            if (resolvedCode != null) {
-                session.setAttribute("pendingCouponCode", resolvedCode);
-                session.setAttribute("pendingDiscount",   discount);
-            }
-
-            Map<String, Object> resp = new HashMap<>();
-            resp.put("clientSecret", intent.getClientSecret());
-            resp.put("total",        total);
-            resp.put("shipping",     shipping);
-            resp.put("tax",          tax);
-            resp.put("discount",     discount);
-            resp.put("couponValid",  couponValid);
-            return ResponseEntity.ok(resp);
-
+            intent = stripeService.createPaymentIntent(pricing.total(), email);
         } catch (StripeException e) {
             log.error("[Checkout] PaymentIntent creation failed: {}", e.getMessage());
             return ResponseEntity.status(503).body(Map.of("error",
                     "Payment service unavailable. Please try again."));
         }
+
+        // Step 2: Create PENDING order and reserve stock (P0-2 / P0-3 fix)
+        Order pendingOrder;
+        try {
+            pendingOrder = orderService.createPendingOrder(
+                    user.getId(), orderItems,
+                    fullName.isBlank() ? email : fullName,
+                    fullAddress, city, state, zip, country,
+                    resolvedCode, pricing, intent.getId());
+        } catch (InsufficientStockException ex) {
+            log.warn("[Checkout] Stock exhausted during order creation — PI={}", intent.getId());
+            return err("One or more items ran out of stock. Please review your cart.");
+        }
+
+        // Store in session for the POST /checkout verification step
+        session.setAttribute("pendingOrderId",          pendingOrder.getId());
+        session.setAttribute("pendingPaymentIntentId",  intent.getId());
+        if (resolvedCode != null) {
+            session.setAttribute("pendingCouponCode", resolvedCode);
+        }
+
+        Map<String, Object> resp = new HashMap<>();
+        resp.put("clientSecret", intent.getClientSecret());
+        resp.put("total",        pricing.total());
+        resp.put("shipping",     pricing.shipping());
+        resp.put("tax",          pricing.tax());
+        resp.put("discount",     pricing.discount());
+        resp.put("couponValid",  couponValid);
+        return ResponseEntity.ok(resp);
     }
 
     // ── POST /api/discount/validate (AJAX) ────────────────────────────────────
@@ -157,7 +209,7 @@ public class CheckoutController {
             return ResponseEntity.ok(Map.of("valid", false, "error", result.error()));
 
         DiscountCode dc = result.code();
-        BigDecimal discount = dc.getType() == DiscountCode.DiscountType.PERCENT
+        BigDecimal savings = dc.getType() == DiscountCode.DiscountType.PERCENT
                 ? subtotal.multiply(dc.getValue())
                        .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP)
                 : dc.getValue().min(subtotal).setScale(2, RoundingMode.HALF_UP);
@@ -167,103 +219,87 @@ public class CheckoutController {
                 "code",     dc.getCode(),
                 "type",     dc.getType().name(),
                 "value",    dc.getValue(),
-                "savings",  discount,
-                "discount", discount
+                "savings",  savings,
+                "discount", savings
         ));
     }
 
     // ── POST /checkout ─────────────────────────────────────────────────────────
 
+    /**
+     * Thin form-submit handler. The order already exists (PENDING); this endpoint
+     * verifies the Stripe PI succeeded, transitions the order to PAID, and redirects.
+     * The webhook handles the async PROCESSING transition, email, and Printful push.
+     */
     @PostMapping("/checkout")
     @PreAuthorize("isAuthenticated()")
-    public String placeOrder(@Valid CheckoutForm form,
-                             BindingResult bindingResult,
+    public String placeOrder(@ModelAttribute CheckoutForm form,
                              @AuthenticationPrincipal UserDetails principal,
                              HttpSession session, Model model) {
 
-        SessionCart cart = resolveCart(session);
-        if (cart.isEmpty()) return "redirect:/shop";
-
-        if (bindingResult.hasErrors()) {
-            addCheckoutModel(model, cart, form);
-            return "checkout";
-        }
+        // Retrieve the PENDING order from the session
+        Long pendingOrderId = (Long) session.getAttribute("pendingOrderId");
+        if (pendingOrderId == null) return "redirect:/shop";
 
         String paymentIntentId = form.getPaymentIntentId();
-        if (paymentIntentId == null || paymentIntentId.isBlank()) {
-            addCheckoutModel(model, cart, form);
-            model.addAttribute("paymentError", "Payment was not completed. Please try again.");
-            return "checkout";
-        }
-
-        // Must match the intent we created in this session
         String sessionIntentId = (String) session.getAttribute("pendingPaymentIntentId");
-        if (!paymentIntentId.equals(sessionIntentId)) {
+
+        if (paymentIntentId == null || paymentIntentId.isBlank()
+                || !paymentIntentId.equals(sessionIntentId)) {
             log.warn("[Checkout] PI mismatch — form:{} session:{}", paymentIntentId, sessionIntentId);
+            // Cancel the pending order so stock is restored
+            safelyCancelOrder(pendingOrderId);
+            clearPendingSession(session);
+            SessionCart cart = resolveCart(session);
             addCheckoutModel(model, cart, form);
             model.addAttribute("paymentError", "Payment session expired. Please try again.");
             return "checkout";
         }
 
-        // Verify with Stripe and check the amount matches
+        // Verify with Stripe that the PI is in succeeded state and the amount matches
         try {
+            // The order's total is the authoritative amount to verify against
+            Order order = orderService.findOrderWithItemsForUser(pendingOrderId,
+                    userService.findByEmail(principal.getUsername())
+                               .orElseThrow().getId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
             PaymentIntent intent = stripeService.retrieveAndVerify(
-                    paymentIntentId,
-                    (BigDecimal) session.getAttribute("pendingOrderTotal"));
+                    paymentIntentId, order.getTotal());
+
             if (intent == null) {
+                safelyCancelOrder(pendingOrderId);
+                clearPendingSession(session);
+                SessionCart cart = resolveCart(session);
                 addCheckoutModel(model, cart, form);
-                model.addAttribute("paymentError", "Payment could not be verified. Please contact support.");
+                model.addAttribute("paymentError",
+                        "Payment could not be verified. Please contact support.");
                 return "checkout";
             }
+
         } catch (StripeException e) {
             log.error("[Checkout] Stripe verification error: {}", e.getMessage());
+            SessionCart cart = resolveCart(session);
             addCheckoutModel(model, cart, form);
-            model.addAttribute("paymentError", "Payment verification failed. Please contact support.");
+            model.addAttribute("paymentError",
+                    "Payment verification failed. Please contact support.");
             return "checkout";
         }
 
-        // Clear pending payment data from session
-        session.removeAttribute("pendingPaymentIntentId");
-        session.removeAttribute("pendingOrderTotal");
-        String     pendingCoupon   = (String)     session.getAttribute("pendingCouponCode");
-        BigDecimal pendingDiscount = (BigDecimal) session.getAttribute("pendingDiscount");
-        session.removeAttribute("pendingCouponCode");
-        session.removeAttribute("pendingDiscount");
+        // Mark the order PAID (webhook will transition to PROCESSING asynchronously)
+        orderService.markOrderPaid(pendingOrderId);
 
-        User user = userService.findByEmail(principal.getUsername())
-                .orElseThrow(() -> new IllegalStateException("Authenticated user not found"));
+        // Clear cart and pending session attributes
+        SessionCart cart = resolveCart(session);
+        cart.clear();
+        session.setAttribute("cart", cart);
+        clearPendingSession(session);
 
-        // Use session-verified discount (not the form field, which is client-sent)
-        String     couponCode    = pendingCoupon   != null ? pendingCoupon   : form.getCouponCode();
-        BigDecimal discountAmount = pendingDiscount != null ? pendingDiscount : BigDecimal.ZERO;
+        // Post-purchase discount code for confirmation page
+        session.setAttribute("nextOrderCode",
+                discountCodeService.generateNextOrderCode().getCode());
 
-        List<OrderItemRequest> items = cart.getItems().stream()
-                .map(e -> new OrderItemRequest(e.variantId(), e.quantity()))
-                .collect(Collectors.toList());
-
-        String fullAddress = (form.getAddress2() != null && !form.getAddress2().isBlank())
-                ? form.getAddress() + ", " + form.getAddress2()
-                : form.getAddress();
-
-        try {
-            Order order = orderService.placeOrder(
-                    user.getId(), items,
-                    form.getFullName(), fullAddress,
-                    form.getCity(), form.getState(), form.getZip(),
-                    couponCode, discountAmount, paymentIntentId);
-
-            cart.clear();
-            session.setAttribute("cart", cart);
-            session.setAttribute("nextOrderCode", discountCodeService.generateNextOrderCode().getCode());
-
-            return "redirect:/order/" + order.getId() + "/confirmation";
-
-        } catch (InsufficientStockException ex) {
-            addCheckoutModel(model, cart, form);
-            model.addAttribute("stockError",
-                    "One or more items ran out of stock. Please review your cart and try again.");
-            return "checkout";
-        }
+        return "redirect:/order/" + pendingOrderId + "/confirmation";
     }
 
     // ── GET /order/{id}/confirmation ───────────────────────────────────────────
@@ -298,5 +334,23 @@ public class CheckoutController {
     private SessionCart resolveCart(HttpSession session) {
         Object attr = session.getAttribute("cart");
         return attr instanceof SessionCart existing ? existing : new SessionCart();
+    }
+
+    private void clearPendingSession(HttpSession session) {
+        session.removeAttribute("pendingOrderId");
+        session.removeAttribute("pendingPaymentIntentId");
+        session.removeAttribute("pendingCouponCode");
+    }
+
+    private void safelyCancelOrder(Long orderId) {
+        try {
+            orderService.cancelOrder(orderId);
+        } catch (Exception e) {
+            log.warn("[Checkout] Could not cancel pending order {}: {}", orderId, e.getMessage());
+        }
+    }
+
+    private ResponseEntity<Map<String, Object>> err(String message) {
+        return ResponseEntity.badRequest().body(Map.of("error", message));
     }
 }

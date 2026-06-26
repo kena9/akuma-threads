@@ -67,4 +67,19 @@ public class CacheConfig {
                 .maximumSize(10_000)
                 .build();
     }
+
+    /**
+     * Caffeine cache for forgot-password rate limiting (P2-9 fix).
+     *
+     * <p>Keyed by the email address submitted to POST /forgot-password.
+     * Entries auto-expire after 1 hour, allowing at most 5 requests per
+     * email per hour to prevent email flooding / password-reset abuse.
+     */
+    @Bean
+    public Cache<String, Integer> forgotPasswordCache() {
+        return Caffeine.newBuilder()
+                .expireAfterWrite(1, TimeUnit.HOURS)
+                .maximumSize(10_000)
+                .build();
+    }
 }

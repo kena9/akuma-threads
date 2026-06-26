@@ -58,6 +58,27 @@ public class DiscountCodeService {
         repo.incrementUsedCount(code.toUpperCase().strip());
     }
 
+    /**
+     * Atomically redeems a discount code at webhook time (P0-5 fix).
+     *
+     * <p>Uses a conditional UPDATE that only increments {@code usedCount} when
+     * the code is still active, unexpired, and under its usage limit. This prevents
+     * a race condition where two simultaneous webhooks try to redeem the last use
+     * of the same single-use code.
+     *
+     * @param code the raw coupon code from the order (may be null)
+     * @return {@code true} if the redemption was applied, {@code false} if the
+     *         code was already exhausted, expired, or null
+     */
+    @Transactional
+    public boolean redeemIfAvailable(String code) {
+        if (code == null || code.isBlank()) return false;
+        int rows = repo.redeemIfAvailable(
+                code.toUpperCase().strip(),
+                java.time.LocalDateTime.now());
+        return rows > 0;
+    }
+
     @Transactional(readOnly = true)
     public List<DiscountCode> findAll() { return repo.findAllByOrderByCreatedAtDesc(); }
 

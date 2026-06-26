@@ -1,5 +1,6 @@
 package com.akumathreads.service;
 
+import com.akumathreads.dto.ProductCardDto;
 import com.akumathreads.dto.ProductFormDto;
 import com.akumathreads.model.Product;
 import com.akumathreads.model.ProductVariant;
@@ -110,14 +111,25 @@ public class ProductService {
      * @param pageable  page, size (12), and sort direction from the request
      * @return one page of matching active products
      */
+    /**
+     * Paginated, dynamically filtered shop listing — the primary shop read path.
+     *
+     * <p>Returns {@link ProductCardDto} (not raw entities) so the result is safe to cache.
+     * Caching JPA entities with lazy {@code variants} causes
+     * {@code LazyInitializationException} on cache hits because the session is closed.
+     * Mapping to a DTO inside this method (while the session is still open) avoids that.
+     *
+     * <p>{@code Page.map()} preserves pagination metadata while converting each element.
+     */
     @Cacheable(value = "products", key = "#keyword + '_' + #category + '_' + #minPrice + '_' + #maxPrice + '_' + #pageable.pageNumber + '_' + #pageable.sort")
-    public Page<Product> findFiltered(String keyword,
-                                      Product.Category category,
-                                      BigDecimal minPrice,
-                                      BigDecimal maxPrice,
-                                      Pageable pageable) {
+    public Page<ProductCardDto> findFiltered(String keyword,
+                                             Product.Category category,
+                                             BigDecimal minPrice,
+                                             BigDecimal maxPrice,
+                                             Pageable pageable) {
         Specification<Product> spec = ProductSpecification.withFilters(keyword, category, minPrice, maxPrice);
-        return productRepository.findAll(spec, pageable);
+        // Map inside the transaction — session is open, variant batch-load succeeds
+        return productRepository.findAll(spec, pageable).map(ProductCardDto::from);
     }
 
     // ── Write operations ─────────────────────────────────────────────────────

@@ -1,5 +1,6 @@
 package com.akumathreads.controller;
 
+import com.akumathreads.dto.ProductCardDto;
 import com.akumathreads.model.Product;
 import com.akumathreads.repository.OrderRepository;
 import com.akumathreads.service.ProductService;
@@ -87,7 +88,7 @@ public class ProductController {
                 (hasEditionSize ? " Limited to " + product.getEditionSize() + " pieces." : ""));
 
         // ── Related products ──────────────────────────────────────────────────
-        List<Product> related = productService
+        List<ProductCardDto> related = productService
                 .findFiltered(null, product.getCategory(), null, null,
                         PageRequest.of(0, 5, Sort.by("createdDate").descending()))
                 .getContent()

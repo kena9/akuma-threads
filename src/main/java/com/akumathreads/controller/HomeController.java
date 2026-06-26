@@ -1,6 +1,6 @@
 package com.akumathreads.controller;
 
-import com.akumathreads.model.Product;
+import com.akumathreads.dto.ProductCardDto;
 import com.akumathreads.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -19,7 +19,7 @@ public class HomeController {
 
     @GetMapping("/")
     public String home(Model model) {
-        List<Product> latest = productService
+        List<ProductCardDto> latest = productService
                 .findFiltered(null, null, null, null,
                         PageRequest.of(0, 3, Sort.by("createdDate").descending()))
                 .getContent();

@@ -1,6 +1,6 @@
 package com.akumathreads.controller;
 
-import com.akumathreads.model.Product;
+import com.akumathreads.dto.ProductCardDto;
 import com.akumathreads.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+
 
 /**
  * Dynamic sitemap so Google always indexes the current product catalogue.
@@ -33,7 +34,7 @@ public class SitemapController {
     public String sitemap() {
 
         // Fetch all active products (up to 500 — more than enough for a drops brand)
-        List<Product> products = productService
+        List<ProductCardDto> products = productService
                 .findFiltered(null, null, null, null,
                         PageRequest.of(0, 500, Sort.by("createdDate").descending()))
                 .getContent();
@@ -50,7 +51,7 @@ public class SitemapController {
         appendUrl(xml, BASE_URL + "/about",     today, "monthly", "0.7");
 
         // ── Product pages ─────────────────────────────────────────────────────
-        for (Product p : products) {
+        for (ProductCardDto p : products) {
             String lastMod = p.getCreatedDate() != null
                     ? p.getCreatedDate().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME).substring(0, 10)
                     : today;

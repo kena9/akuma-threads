@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -104,6 +105,27 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     // ── Stripe webhook lookup ─────────────────────────────────────────────────
 
     Optional<Order> findByPaymentIntentId(String paymentIntentId);
+
+    /**
+     * Loads a single order by Stripe PaymentIntent ID with all relations eagerly
+     * fetched (user, items, variant, product). Used by the webhook to send
+     * confirmation emails and push to Printful without triggering lazy-load failures.
+     */
+    @Query("SELECT DISTINCT o FROM Order o " +
+           "JOIN FETCH o.user " +
+           "JOIN FETCH o.items i " +
+           "JOIN FETCH i.variant v " +
+           "JOIN FETCH v.product " +
+           "WHERE o.paymentIntentId = :pi")
+    Optional<Order> findByPaymentIntentIdWithItems(@Param("pi") String pi);
+
+    // ── Stale PENDING order cleanup ───────────────────────────────────────────
+
+    /**
+     * Returns orders in the given status whose {@code createdAt} is before the cutoff.
+     * Used by the cleanup scheduler to expire PENDING orders abandoned by the user.
+     */
+    List<Order> findByStatusAndCreatedAtBefore(Order.Status status, LocalDateTime cutoff);
 
     // ── Abandoned cart detection ──────────────────────────────────────────────
 
