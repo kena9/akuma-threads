@@ -4,12 +4,10 @@ on:
   workflow_dispatch:
     # Trigger this workflow manually from the GitHub Actions UI.
     # Go to: GitHub repo → Actions tab → "Deploy to AWS Elastic Beanstalk" → Run workflow
-    # This prevents accidental deploys on every push while AWS secrets are not yet configured.
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    needs: []   # Add 'build' here once tests are passing
 
     steps:
       - name: Checkout code
@@ -22,8 +20,21 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Build JAR
-        run: ./mvnw package -DskipTests -B
+      # Never ship a JAR whose tests haven't passed.
+      # 'verify' runs the full lifecycle: compile → test → package.
+      - name: Run tests and build JAR
+        run: ./mvnw verify -B
+
+      # Bundle the JAR with the Procfile and .ebextensions so EB applies
+      # the config-as-code (health check path, port). A bare JAR deploy
+      # would silently ignore both.
+      - name: Build EB deploy bundle
+        run: |
+          mkdir -p bundle
+          cp target/akuma-threads-0.0.1-SNAPSHOT.jar bundle/app.jar
+          cp Procfile bundle/
+          cp -r .ebextensions bundle/
+          cd bundle && zip -r ../deploy-bundle.zip .
 
       - name: Deploy to Elastic Beanstalk
         uses: einaregilsson/beanstalk-deploy@v21
@@ -34,16 +45,5 @@ jobs:
           environment_name: akuma-threads-prod
           version_label: ${{ github.sha }}
           region: us-east-1
-          deployment_package: target/akuma-threads-0.0.1-SNAPSHOT.jar
-
-# -------------------------------------------------------
-# TO ACTIVATE THIS WORKFLOW (your DevOps learning task):
-#
-# 1. Create an IAM user in AWS with ElasticBeanstalkFullAccess
-# 2. Go to GitHub → Settings → Secrets → Actions
-# 3. Add secrets:
-#    - AWS_ACCESS_KEY_ID
-#    - AWS_SECRET_ACCESS_KEY
-# 4. Create your Elastic Beanstalk app named 'akuma-threads'
-#    with environment 'akuma-threads-prod'
-# -------------------------------------------------------
+          deployment_package: deploy-bundle.zip
+          use_existing_version_if_available: true

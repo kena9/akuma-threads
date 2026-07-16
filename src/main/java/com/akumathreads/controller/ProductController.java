@@ -4,7 +4,14 @@ import com.akumathreads.dto.ProductCardDto;
 import com.akumathreads.model.Product;
 import com.akumathreads.repository.OrderRepository;
 import com.akumathreads.service.ProductService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
@@ -29,8 +36,14 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ProductController {
 
+    private static final Logger log = LoggerFactory.getLogger(ProductController.class);
+
     private final ProductService  productService;
     private final OrderRepository orderRepository;
+    private final ObjectMapper    objectMapper;
+
+    @Value("${app.base-url:http://localhost:8080}")
+    private String appBaseUrl;
 
     @GetMapping("/product/{id}")
     public String productDetail(@PathVariable Long id, Model model) {
@@ -98,6 +111,96 @@ public class ProductController {
                 .collect(Collectors.toList());
         model.addAttribute("relatedProducts", related);
 
+        // ── JSON-LD structured data ───────────────────────────────────────────
+        // Build via Jackson so every string value is properly escaped —
+        // no risk of Thymeleaf th:inline="javascript" mis-escaping descriptions
+        // that contain quotes, newlines, or </script> sequences.
+        String productUrl = appBaseUrl + "/product/" + id;
+        model.addAttribute("productJsonLd",    buildProductJsonLd(product, productUrl, inStock));
+        model.addAttribute("breadcrumbJsonLd", buildBreadcrumbJsonLd(product, productUrl));
+
         return "product-detail";
+    }
+
+    // ── JSON-LD helpers ───────────────────────────────────────────────────────
+
+    private String buildProductJsonLd(Product product, String productUrl, boolean inStock) {
+        try {
+            ObjectNode root = objectMapper.createObjectNode();
+            root.put("@context", "https://schema.org/");
+            root.put("@type", "Product");
+            root.put("name", product.getName());
+            if (product.getImageUrl() != null) root.put("image", product.getImageUrl());
+            if (product.getDescription() != null && !product.getDescription().isBlank()) {
+                root.put("description", product.getDescription());
+            }
+
+            ObjectNode brand = root.putObject("brand");
+            brand.put("@type", "Brand");
+            brand.put("name", "Olly Threads");
+
+            ObjectNode offer = root.putObject("offers");
+            offer.put("@type", "Offer");
+            offer.put("url", productUrl);
+            offer.put("priceCurrency", "USD");
+            if (product.getPrice() != null) {
+                offer.put("price", product.getPrice().toPlainString());
+            }
+            offer.put("availability",
+                    inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock");
+
+            ObjectNode seller = offer.putObject("seller");
+            seller.put("@type", "Organization");
+            seller.put("name", "Olly Threads");
+
+            return toHtmlSafeJson(root);
+        } catch (JsonProcessingException e) {
+            log.warn("Failed to build product JSON-LD for id={}", product.getId(), e);
+            return "{}";
+        }
+    }
+
+    private String buildBreadcrumbJsonLd(Product product, String productUrl) {
+        try {
+            ObjectNode root = objectMapper.createObjectNode();
+            root.put("@context", "https://schema.org/");
+            root.put("@type", "BreadcrumbList");
+
+            ArrayNode items = root.putArray("itemListElement");
+
+            ObjectNode home = items.addObject();
+            home.put("@type", "ListItem");
+            home.put("position", 1);
+            home.put("name", "Home");
+            home.put("item", appBaseUrl);
+
+            ObjectNode shop = items.addObject();
+            shop.put("@type", "ListItem");
+            shop.put("position", 2);
+            shop.put("name", "Shop");
+            shop.put("item", appBaseUrl + "/shop");
+
+            ObjectNode detail = items.addObject();
+            detail.put("@type", "ListItem");
+            detail.put("position", 3);
+            detail.put("name", product.getName());
+            detail.put("item", productUrl);
+
+            return toHtmlSafeJson(root);
+        } catch (JsonProcessingException e) {
+            log.warn("Failed to build breadcrumb JSON-LD for id={}", product.getId(), e);
+            return "{}";
+        }
+    }
+
+    /**
+     * Serializes a Jackson node to JSON and escapes {@code </} as {@code <\/}.
+     * This prevents a product description containing {@code </script>} from
+     * prematurely closing the surrounding {@code <script type="application/ld+json">}
+     * element. {@code <\/} is valid JSON (escaped forward slash) and is ignored
+     * by JSON parsers.
+     */
+    private String toHtmlSafeJson(ObjectNode node) throws JsonProcessingException {
+        return objectMapper.writeValueAsString(node).replace("</", "<\\/");
     }
 }

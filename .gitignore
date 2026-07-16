@@ -41,3 +41,8 @@ application-local.properties
 
 # Uploaded files (local dev)
 uploads/
+
+# Backup/editor junk — never commit
+*.bak
+*.swp
+*~

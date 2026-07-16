@@ -1,0 +1,39 @@
+# =============================================
+# LOCAL DEVELOPMENT OVERRIDES
+# =============================================
+# This file is in .gitignore — it will NEVER be committed to Git.
+# Put any secrets or local-only settings here.
+# Spring Boot loads this automatically when you run with the "local" profile.
+#
+# ⚠ SECURITY NOTE (July 2026 upgrade): the previous version of this file
+# containing real credentials was shared inside a project zip. Those
+# credentials should be treated as exposed. Before refilling this file:
+#   1. Revoke the old Gmail app password and generate a new one
+#      (myaccount.google.com → Security → App Passwords)
+#   2. Regenerate the Printful API token
+#      (printful.com/dashboard/store/api)
+#   3. Roll the Stripe test keys (Dashboard → Developers → API keys)
+#   4. Change the local MySQL password
+# =============================================
+
+DB_PASSWORD=CHANGE_ME
+
+# Printful
+printful.api.key=CHANGE_ME
+printful.store-id=CHANGE_ME
+
+# Gmail SMTP (app password, not your normal password)
+GMAIL_USERNAME=you@gmail.com
+GMAIL_APP_PASSWORD=CHANGE_ME
+spring.mail.username=${GMAIL_USERNAME}
+spring.mail.password=${GMAIL_APP_PASSWORD}
+
+spring.devtools.restart.enabled=false
+app.base-url=http://localhost:8080
+
+# Stripe (TEST keys locally — never paste live keys here)
+STRIPE_PUBLISHABLE_KEY=pk_test_CHANGE_ME
+STRIPE_SECRET_KEY=sk_test_CHANGE_ME
+stripe.publishable-key=${STRIPE_PUBLISHABLE_KEY}
+stripe.secret-key=${STRIPE_SECRET_KEY}
+stripe.webhook-secret=whsec_CHANGE_ME

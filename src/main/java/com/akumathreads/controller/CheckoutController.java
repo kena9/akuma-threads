@@ -60,6 +60,7 @@ public class CheckoutController {
     private final UserService         userService;
     private final DiscountCodeService discountCodeService;
     private final StripeService       stripeService;
+    private final com.akumathreads.repository.ProductVariantRepository variantRepository;
 
     // ── GET /checkout ──────────────────────────────────────────────────────────
 
@@ -108,6 +109,31 @@ public class CheckoutController {
         SessionCart cart = resolveCart(session);
         if (cart.isEmpty())
             return err("Cart is empty");
+
+        // ── Reprice cart from live DB prices (stale-price fix) ────────────────
+        // Cart entries snapshot prices at add-time. If an admin changed a price
+        // since then, the Stripe charge, the Order total, and the OrderItem unit
+        // prices (which read live prices) would disagree. Sync them here, before
+        // any amount is computed. Also drop lines whose variant no longer exists.
+        List<Long> cartVariantIds = cart.getItems().stream()
+                .map(SessionCart.CartEntry::variantId)
+                .collect(Collectors.toList());
+        Map<Long, com.akumathreads.model.ProductVariant> liveVariants =
+                variantRepository.findAllById(cartVariantIds).stream()
+                        .collect(Collectors.toMap(
+                                com.akumathreads.model.ProductVariant::getId,
+                                java.util.function.Function.identity()));
+        for (Long variantId : cartVariantIds) {
+            com.akumathreads.model.ProductVariant live = liveVariants.get(variantId);
+            if (live == null) {
+                cart.remove(variantId);          // variant deleted since add-time
+            } else {
+                cart.reprice(variantId, live.getProduct().getPrice());
+            }
+        }
+        session.setAttribute("cart", cart);
+        if (cart.isEmpty())
+            return err("Your cart items are no longer available. Please review your cart.");
 
         // Compute subtotal from cart
         BigDecimal subtotal = cart.getItems().stream()

@@ -272,3 +272,97 @@ footer {
     .nav-links { gap: 1rem; }
     .nav-links li:not(:last-child):not(:nth-last-child(2)) { display: none; }
 }
+
+/* ============================================================
+   Motion & Polish Layer — added July 2026 upgrade
+   Pairs with motion.js. Every rule here degrades gracefully:
+   no JS, old browsers, and reduced-motion users all get a
+   fully working static site.
+   ============================================================ */
+
+/* ── Native cross-document View Transitions (Chrome 126+) ────
+   One CSS rule turns every internal navigation into a smooth
+   crossfade with a slight vertical settle. Browsers that don't
+   understand @view-transition ignore this block; motion.js
+   falls back to its own fade there. */
+@view-transition { navigation: auto; }
+
+::view-transition-old(root) {
+    animation: ot-vt-out 220ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+::view-transition-new(root) {
+    animation: ot-vt-in 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes ot-vt-out {
+    to { opacity: 0; transform: translateY(-8px); }
+}
+@keyframes ot-vt-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* ── Progressive image settle (motion.js adds .ot-loaded) ────
+   Scoped to .ot-motion so images are never hidden when JS is
+   off. Cached images get the class before first paint. */
+.ot-motion img:not(.ot-loaded) {
+    opacity: 0;
+    transform: scale(1.015);
+}
+.ot-motion img {
+    transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.ot-motion img.ot-loaded {
+    opacity: 1;
+    transform: none;
+}
+
+/* ── Cart badge pop (cart.js toggles .ot-pop on update) ────── */
+@keyframes ot-badge-pop {
+    0%   { transform: scale(1); }
+    45%  { transform: scale(1.45); }
+    100% { transform: scale(1); }
+}
+#cart-count.ot-pop {
+    animation: ot-badge-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ── Keyboard focus (quality floor, brand-colored) ─────────── */
+:focus-visible {
+    outline: 2px solid #e50914;
+    outline-offset: 3px;
+    border-radius: 2px;
+}
+
+/* ── Brand text selection ──────────────────────────────────── */
+::selection {
+    background: #e50914;
+    color: #ffffff;
+}
+
+/* ── Slim dark scrollbar (WebKit/Blink) ────────────────────── */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: #0a0a0a; }
+::-webkit-scrollbar-thumb {
+    background: #2a2a2a;
+    border-radius: 5px;
+    border: 2px solid #0a0a0a;
+}
+::-webkit-scrollbar-thumb:hover { background: #e50914; }
+
+/* ── Smooth anchor scrolling, motion-permitting ────────────── */
+@media (prefers-reduced-motion: no-preference) {
+    html { scroll-behavior: smooth; }
+}
+
+/* ── Reduced motion: hard global stop ──────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+    ::view-transition-old(root),
+    ::view-transition-new(root) { animation: none !important; }
+}

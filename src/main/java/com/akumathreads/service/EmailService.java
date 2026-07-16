@@ -9,6 +9,8 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import jakarta.mail.internet.MimeMessage;
+import org.springframework.web.util.HtmlUtils;
+
 import java.util.List;
 
 /**
@@ -185,7 +187,8 @@ public class EmailService {
                     Powered by Printful print-on-demand fulfillment.
                   </p>
                 </div>
-                """.formatted(customerName, orderId, discountRow,
+                """.formatted(HtmlUtils.htmlEscape(customerName == null ? "" : customerName),
+                              orderId, discountRow,
                               String.format("%.2f", total), baseUrl);
 
         send(toEmail, subject, body);
@@ -216,7 +219,7 @@ public class EmailService {
                   </td>
                 </tr>
                 """.formatted(
-                    item.getVariant().getProduct().getName(),
+                    HtmlUtils.htmlEscape(item.getVariant().getProduct().getName()),
                     item.getVariant().getSize().name(),
                     item.getQuantity()));
             shown++;
@@ -278,7 +281,8 @@ public class EmailService {
                     <a href="%s/unsubscribe?email=%s" style="color:#aaa;">Unsubscribe</a>
                   </p>
                 </div>
-                """.formatted(customerName, itemRows, recoveryCode, baseUrl, baseUrl,
+                """.formatted(HtmlUtils.htmlEscape(customerName == null ? "" : customerName),
+                              itemRows, recoveryCode, baseUrl, baseUrl,
                               java.net.URLEncoder.encode(toEmail, java.nio.charset.StandardCharsets.UTF_8));
 
         send(toEmail, subject, body);

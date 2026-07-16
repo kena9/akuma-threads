@@ -51,9 +51,20 @@ export function getCsrfHeader() {
 export function updateCartBadge(count) {
     const badge = document.getElementById('cart-count');
     if (!badge) return;
+    const previous = parseInt(badge.textContent, 10) || 0;
     if (count > 0) {
         badge.textContent = count > 99 ? '99+' : String(count);
         badge.classList.remove('hidden');
+        // Pop animation when items are added (keyframes in main.css;
+        // reduced-motion users get an instant update instead).
+        if (count > previous) {
+            badge.classList.remove('ot-pop');
+            void badge.offsetWidth; // restart the animation
+            badge.classList.add('ot-pop');
+            badge.addEventListener('animationend', function () {
+                badge.classList.remove('ot-pop');
+            }, { once: true });
+        }
     } else {
         badge.textContent = '';
         badge.classList.add('hidden');

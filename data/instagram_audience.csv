@@ -1,0 +1,11 @@
+dimension,segment,share_pct
+age,13-17,10.3
+age,18-24,51.0
+age,25-34,31.2
+age,35-44,4.7
+age,45-54,1.7
+age,55-64,0.4
+age,65+,0.7
+location,United States,33.4
+location,Brazil,8.5
+location,Mexico,5.0

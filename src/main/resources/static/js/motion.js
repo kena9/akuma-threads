@@ -15,10 +15,28 @@
 (function () {
     'use strict';
 
+    // ── 0. MOTION PREFERENCES ─────────────────────────────────────────────────
+    // Respect the OS-level "reduce motion" setting. When it's on, every effect
+    // in this file either no-ops or resolves instantly. Vestibular-disorder
+    // users get a fully functional, fully static site.
+    const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Cross-document View Transitions (Chrome 126+). When the browser can run
+    // the native page transition declared in main.css, the legacy JS fade-out
+    // below steps aside so navigations aren't animated twice.
+    const HAS_VIEW_TRANSITIONS =
+        typeof CSS !== 'undefined' &&
+        CSS.supports && CSS.supports('view-transition-name: none');
+
+    // Marker class so CSS can scope JS-dependent styles (e.g. image fade-in)
+    // and no-JS visitors never get invisible content.
+    document.documentElement.classList.add('ot-motion');
+    if (REDUCED) document.documentElement.classList.add('ot-reduced');
+
     // ── 1. PAGE FADE-IN ────────────────────────────────────────────────────────
     // Body starts invisible; we fade it in immediately on DOM ready.
     // This prevents the "flash of unstyled content" on slow connections.
-    document.documentElement.style.setProperty('--page-opacity', '0');
+    document.documentElement.style.setProperty('--page-opacity', REDUCED ? '1' : '0');
 
     const pageStyle = document.createElement('style');
     pageStyle.textContent = `
@@ -37,18 +55,27 @@
         requestAnimationFrame(revealPage);
     }
 
-    // Fade out before navigating away (makes internal nav feel like SPA)
-    document.addEventListener('click', function (e) {
-        const link = e.target.closest('a[href]');
-        if (!link) return;
-        const href = link.getAttribute('href');
-        // Only animate same-origin, non-hash, non-external links
-        if (!href || href.startsWith('#') || href.startsWith('http') ||
-            href.startsWith('mailto') || link.target === '_blank') return;
-        e.preventDefault();
-        document.documentElement.style.setProperty('--page-opacity', '0');
-        setTimeout(() => { window.location.href = href; }, 280);
-    });
+    // Fade out before navigating away (makes internal nav feel like SPA).
+    // Skipped entirely when the browser supports native cross-document View
+    // Transitions (declared in main.css) — those are smoother and free.
+    if (!REDUCED && !HAS_VIEW_TRANSITIONS) {
+        document.addEventListener('click', function (e) {
+            const link = e.target.closest('a[href]');
+            if (!link) return;
+            // Never hijack modified clicks: ctrl/cmd-click (new tab),
+            // shift-click (new window), middle-click, alt-click (download).
+            if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey ||
+                e.button !== 0 || e.defaultPrevented) return;
+            if (link.hasAttribute('download')) return;
+            const href = link.getAttribute('href');
+            // Only animate same-origin, non-hash, non-external links
+            if (!href || href.startsWith('#') || href.startsWith('http') ||
+                href.startsWith('mailto') || link.target === '_blank') return;
+            e.preventDefault();
+            document.documentElement.style.setProperty('--page-opacity', '0');
+            setTimeout(() => { window.location.href = href; }, 280);
+        });
+    }
 
     // ── 2. SCROLL PROGRESS BAR ─────────────────────────────────────────────────
     const progressBar = document.createElement('div');
@@ -73,8 +100,9 @@
     }, { passive: true });
 
     // ── 3. CUSTOM CURSOR ───────────────────────────────────────────────────────
-    // Only on non-touch devices
-    if (window.matchMedia('(pointer: fine)').matches) {
+    // Only on non-touch devices, and never when the user asked for reduced
+    // motion — they keep the native OS cursor.
+    if (!REDUCED && window.matchMedia('(pointer: fine)').matches) {
         const cursor    = document.createElement('div');
         const cursorDot = document.createElement('div');
 
@@ -344,14 +372,51 @@
         });
     }
 
+    // ── 10. PROGRESSIVE IMAGE LOAD ─────────────────────────────────────────────
+    // Every image settles in with a soft fade + micro-zoom as it finishes
+    // loading (CSS lives in main.css under `.ot-motion img`). Images already in
+    // cache are marked instantly so nothing flashes.
+
+    function initImageLoad() {
+        document.querySelectorAll('img').forEach(function (img) {
+            if (img.complete && img.naturalWidth > 0) {
+                img.classList.add('ot-loaded');
+            } else {
+                img.addEventListener('load',  function () { img.classList.add('ot-loaded'); }, { once: true });
+                img.addEventListener('error', function () { img.classList.add('ot-loaded'); }, { once: true });
+            }
+        });
+    }
+
+    // ── REDUCED-MOTION FAST PATH ───────────────────────────────────────────────
+    // Everything visible immediately; counters show their final value.
+    function initReducedMotion() {
+        document.querySelectorAll('[data-reveal]').forEach(function (el) {
+            el.classList.add('revealed');
+        });
+        document.querySelectorAll('[data-count]').forEach(function (el) {
+            const target = parseInt(el.dataset.count, 10);
+            const suffix = el.dataset.countSuffix || '';
+            if (!isNaN(target)) el.textContent = target.toLocaleString() + suffix;
+        });
+        document.querySelectorAll('img').forEach(function (img) {
+            img.classList.add('ot-loaded');
+        });
+    }
+
     // ── INIT ALL ───────────────────────────────────────────────────────────────
     function init() {
+        if (REDUCED) {
+            initReducedMotion();
+            return;
+        }
         initStagger();   // must run before initReveal so children get data-reveal
         initReveal();
         initCounters();
         initMagnetic();
         initParallax();
         initSplitText();
+        initImageLoad();
     }
 
     if (document.readyState === 'loading') {

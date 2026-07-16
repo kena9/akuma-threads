@@ -57,6 +57,27 @@ public class SessionCart implements Serializable {
         items.remove(variantId);
     }
 
+    /**
+     * Replaces the stored unit price for the given variant with a fresh value.
+     *
+     * <p>Cart entries snapshot the price at add-time. Before any money is charged
+     * (checkout / PaymentIntent creation), the caller must re-read live prices from
+     * the database and push them into the cart via this method so the amount charged,
+     * the Order total, and the persisted OrderItem unit prices all agree.
+     * No-op if the variant is not in the cart.
+     */
+    public void reprice(Long variantId, BigDecimal newUnitPrice) {
+        CartEntry existing = items.get(variantId);
+        if (existing == null || newUnitPrice == null) return;
+        if (newUnitPrice.compareTo(existing.unitPrice()) == 0) return;
+        items.put(variantId, new CartEntry(
+                existing.variantId(),
+                existing.productName(),
+                existing.sizeName(),
+                newUnitPrice,
+                existing.quantity()));
+    }
+
     /** Removes all entries. */
     public void clear() {
         items.clear();

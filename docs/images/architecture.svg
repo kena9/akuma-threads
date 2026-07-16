@@ -1,0 +1,186 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 900" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#111111"/>
+    </marker>
+    <marker id="arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#e50914"/>
+    </marker>
+    <marker id="arrowGray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#888888"/>
+    </marker>
+  </defs>
+
+  <!-- canvas -->
+  <rect x="0" y="0" width="1280" height="900" fill="#f7f6f3"/>
+  <rect x="0" y="0" width="1280" height="6" fill="#e50914"/>
+
+  <!-- title -->
+  <text x="40" y="52" font-size="22" font-weight="700" fill="#111111" letter-spacing="1">OLLY THREADS · PRODUCTION ARCHITECTURE</text>
+  <text x="40" y="74" font-size="12" fill="#777777">Spring Boot 3.2 on AWS Elastic Beanstalk · region us-east-1 · July 2026</text>
+
+  <!-- ══════════ CI LANE ══════════ -->
+  <rect x="40" y="96" width="1200" height="84" rx="8" fill="#ffffff" stroke="#dddddd"/>
+  <text x="56" y="122" font-size="11" font-weight="700" fill="#555555" letter-spacing="2">GITHUB ACTIONS</text>
+
+  <rect x="200" y="112" width="150" height="50" rx="6" fill="#111111"/>
+  <text x="275" y="133" font-size="11" fill="#ffffff" text-anchor="middle">push to main</text>
+  <text x="275" y="149" font-size="10" fill="#999999" text-anchor="middle">build.yml</text>
+
+  <line x1="350" y1="137" x2="420" y2="137" stroke="#111111" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <rect x="424" y="112" width="200" height="50" rx="6" fill="#111111"/>
+  <text x="524" y="133" font-size="11" fill="#ffffff" text-anchor="middle">mvnw verify</text>
+  <text x="524" y="149" font-size="10" fill="#2ecc71" text-anchor="middle">47 tests gate every build</text>
+
+  <line x1="624" y1="137" x2="694" y2="137" stroke="#111111" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <rect x="698" y="112" width="200" height="50" rx="6" fill="#111111"/>
+  <text x="798" y="133" font-size="11" fill="#ffffff" text-anchor="middle">package JAR</text>
+  <text x="798" y="149" font-size="10" fill="#999999" text-anchor="middle">deploy.yml · manual dispatch</text>
+
+  <!-- deploy arrow into AWS/EB -->
+  <path d="M 798 162 L 798 246" fill="none" stroke="#888888" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#arrowGray)"/>
+  <text x="810" y="196" font-size="10" fill="#888888">deploy JAR bundle</text>
+
+  <!-- ══════════ SHOPPER ══════════ -->
+  <rect x="40" y="236" width="190" height="368" rx="8" fill="#ffffff" stroke="#dddddd"/>
+  <text x="56" y="262" font-size="11" font-weight="700" fill="#555555" letter-spacing="2">SHOPPER</text>
+  <rect x="80" y="284" width="110" height="170" rx="14" fill="#111111"/>
+  <rect x="92" y="300" width="86" height="126" rx="4" fill="#1c1c1c"/>
+  <text x="135" y="352" font-size="20" fill="#e50914" text-anchor="middle" font-weight="700">悪魔</text>
+  <text x="135" y="376" font-size="9" fill="#aaaaaa" text-anchor="middle">ollythreads.com</text>
+  <circle cx="135" cy="440" r="7" fill="none" stroke="#555555"/>
+  <text x="56" y="492" font-size="10" fill="#777777">traffic source (30d):</text>
+  <text x="56" y="510" font-size="10" fill="#111111">TikTok  2.5M viewers</text>
+  <text x="56" y="526" font-size="10" fill="#111111">IG      1.22M reached</text>
+  <text x="56" y="542" font-size="10" fill="#111111">IG      124.7K visits</text>
+  <text x="56" y="566" font-size="10" fill="#777777">audience 18-34:</text>
+  <text x="56" y="582" font-size="10" fill="#111111">86.9% of followers</text>
+
+  <!-- HTTPS arrow -->
+  <line x1="230" y1="330" x2="292" y2="330" stroke="#111111" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="236" y="320" font-size="10" fill="#555555">HTTPS 443</text>
+
+  <!-- ══════════ AWS REGION ══════════ -->
+  <rect x="296" y="212" width="650" height="392" rx="10" fill="#fff8ef" stroke="#ff9900" stroke-width="1.5"/>
+  <rect x="312" y="200" width="150" height="24" rx="4" fill="#ff9900"/>
+  <text x="387" y="216" font-size="11" fill="#111111" text-anchor="middle" font-weight="700">AWS · us-east-1</text>
+
+  <!-- ALB -->
+  <rect x="320" y="272" width="190" height="116" rx="8" fill="#ffffff" stroke="#c9c9c9"/>
+  <text x="415" y="296" font-size="12" font-weight="700" fill="#111111" text-anchor="middle">Application</text>
+  <text x="415" y="312" font-size="12" font-weight="700" fill="#111111" text-anchor="middle">Load Balancer</text>
+  <text x="415" y="336" font-size="10" fill="#777777" text-anchor="middle">TLS termination</text>
+  <text x="415" y="352" font-size="10" fill="#777777" text-anchor="middle">health check:</text>
+  <text x="415" y="366" font-size="10" fill="#2e7d32" text-anchor="middle">/actuator/health/readiness</text>
+
+  <!-- ALB -> EB -->
+  <line x1="510" y1="330" x2="574" y2="330" stroke="#111111" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="514" y="318" font-size="9" fill="#555555">HTTP 5000</text>
+  <text x="514" y="352" font-size="9" fill="#555555">X-Fwd-Proto</text>
+
+  <!-- EB / app -->
+  <rect x="578" y="252" width="340" height="176" rx="8" fill="#111111"/>
+  <text x="748" y="278" font-size="13" font-weight="700" fill="#ffffff" text-anchor="middle">Elastic Beanstalk · EC2</text>
+  <text x="748" y="296" font-size="11" fill="#ff9900" text-anchor="middle">Spring Boot 3.2 · Java 21 · port 5000</text>
+  <rect x="596" y="312" width="146" height="24" rx="12" fill="#222222"/>
+  <text x="669" y="328" font-size="9.5" fill="#dddddd" text-anchor="middle">Security · CSRF · CSP</text>
+  <rect x="750" y="312" width="150" height="24" rx="12" fill="#222222"/>
+  <text x="825" y="328" font-size="9.5" fill="#dddddd" text-anchor="middle">session carts (guest ok)</text>
+  <rect x="596" y="344" width="146" height="24" rx="12" fill="#222222"/>
+  <text x="669" y="360" font-size="9.5" fill="#dddddd" text-anchor="middle">atomic stock UPDATE</text>
+  <rect x="750" y="344" width="150" height="24" rx="12" fill="#222222"/>
+  <text x="825" y="360" font-size="9.5" fill="#dddddd" text-anchor="middle">rate limiting · lockout</text>
+  <rect x="596" y="376" width="146" height="24" rx="12" fill="#222222"/>
+  <text x="669" y="392" font-size="9.5" fill="#dddddd" text-anchor="middle">async email queue</text>
+  <rect x="750" y="376" width="150" height="24" rx="12" fill="#222222"/>
+  <text x="825" y="392" font-size="9.5" fill="#dddddd" text-anchor="middle">graceful shutdown 20s</text>
+
+  <!-- EB -> RDS -->
+  <line x1="748" y1="428" x2="748" y2="486" stroke="#111111" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="758" y="462" font-size="9.5" fill="#555555">JDBC 3306 · TLS</text>
+
+  <!-- RDS -->
+  <rect x="578" y="490" width="340" height="94" rx="8" fill="#ffffff" stroke="#c9c9c9"/>
+  <text x="748" y="516" font-size="12" font-weight="700" fill="#111111" text-anchor="middle">RDS · MySQL 8 (db.t3.micro)</text>
+  <text x="748" y="536" font-size="10" fill="#777777" text-anchor="middle">Hikari pool max 10 · ddl-auto=validate</text>
+  <text x="748" y="552" font-size="10" fill="#777777" text-anchor="middle">schema versioned with Flyway baseline</text>
+  <text x="748" y="568" font-size="10" fill="#777777" text-anchor="middle">orders · variants · users · discounts</text>
+
+  <!-- CloudWatch -->
+  <rect x="320" y="490" width="190" height="94" rx="8" fill="#ffffff" stroke="#c9c9c9"/>
+  <text x="415" y="516" font-size="12" font-weight="700" fill="#111111" text-anchor="middle">CloudWatch</text>
+  <text x="415" y="536" font-size="10" fill="#777777" text-anchor="middle">app + ALB logs</text>
+  <text x="415" y="552" font-size="10" fill="#777777" text-anchor="middle">alarm: readiness DOWN</text>
+  <text x="415" y="568" font-size="10" fill="#777777" text-anchor="middle">alarm: 5xx rate</text>
+
+  <!-- ══════════ EXTERNAL SAAS ══════════ -->
+  <rect x="990" y="212" width="250" height="392" rx="8" fill="#ffffff" stroke="#dddddd"/>
+  <text x="1006" y="238" font-size="11" font-weight="700" fill="#555555" letter-spacing="2">EXTERNAL SERVICES</text>
+
+  <rect x="1006" y="256" width="218" height="96" rx="8" fill="#faf7ff" stroke="#635bff"/>
+  <text x="1115" y="280" font-size="12" font-weight="700" fill="#635bff" text-anchor="middle">Stripe</text>
+  <text x="1115" y="300" font-size="9.5" fill="#555555" text-anchor="middle">PaymentIntent · card never</text>
+  <text x="1115" y="314" font-size="9.5" fill="#555555" text-anchor="middle">touches the server</text>
+  <text x="1115" y="334" font-size="9.5" fill="#e50914" text-anchor="middle">webhook = source of truth</text>
+
+  <rect x="1006" y="368" width="218" height="80" rx="8" fill="#ffffff" stroke="#c9c9c9"/>
+  <text x="1115" y="392" font-size="12" font-weight="700" fill="#111111" text-anchor="middle">Printful</text>
+  <text x="1115" y="412" font-size="9.5" fill="#555555" text-anchor="middle">print-on-demand fulfillment</text>
+  <text x="1115" y="426" font-size="9.5" fill="#555555" text-anchor="middle">pushed after payment success</text>
+
+  <rect x="1006" y="464" width="218" height="80" rx="8" fill="#ffffff" stroke="#c9c9c9"/>
+  <text x="1115" y="488" font-size="12" font-weight="700" fill="#111111" text-anchor="middle">Gmail SMTP</text>
+  <text x="1115" y="508" font-size="9.5" fill="#555555" text-anchor="middle">587 STARTTLS · async</text>
+  <text x="1115" y="522" font-size="9.5" fill="#555555" text-anchor="middle">confirmations · resets · carts</text>
+
+  <!-- EB <-> Stripe -->
+  <line x1="918" y1="290" x2="1002" y2="290" stroke="#111111" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="924" y="280" font-size="9" fill="#555555">create PI</text>
+  <path d="M 1200 256 L 1200 238 L 415 238 L 415 268" fill="none" stroke="#e50914" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrowRed)"/>
+  <text x="560" y="232" font-size="9.5" fill="#e50914">webhook · HMAC-SHA256 signed · POST /stripe/webhook</text>
+
+  <!-- EB -> Printful / SMTP -->
+  <path d="M 918 400 L 1002 404" fill="none" stroke="#111111" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <path d="M 918 416 L 970 416 L 970 500 L 1002 500" fill="none" stroke="#111111" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- ══════════ PHASE 2 ANALYTICS ══════════ -->
+  <rect x="40" y="636" width="1200" height="200" rx="10" fill="#ffffff" stroke="#999999" stroke-dasharray="8 5" stroke-width="1.5"/>
+  <text x="56" y="664" font-size="11" font-weight="700" fill="#555555" letter-spacing="2">PHASE 2 · ANALYTICS PIPELINE (design ready · prototyped locally)</text>
+
+  <rect x="56" y="688" width="200" height="64" rx="8" fill="#f0f0f0" stroke="#c9c9c9"/>
+  <text x="156" y="712" font-size="11" font-weight="700" fill="#111111" text-anchor="middle">order events +</text>
+  <text x="156" y="728" font-size="11" font-weight="700" fill="#111111" text-anchor="middle">audience CSVs</text>
+  <text x="156" y="744" font-size="9" fill="#777777" text-anchor="middle">/data · real TikTok + IG exports</text>
+
+  <line x1="256" y1="720" x2="316" y2="720" stroke="#888888" stroke-width="1.5" marker-end="url(#arrowGray)"/>
+
+  <rect x="320" y="688" width="160" height="64" rx="8" fill="#fff8ef" stroke="#ff9900"/>
+  <text x="400" y="716" font-size="12" font-weight="700" fill="#111111" text-anchor="middle">S3</text>
+  <text x="400" y="736" font-size="9.5" fill="#777777" text-anchor="middle">raw zone · versioned</text>
+
+  <line x1="480" y1="720" x2="540" y2="720" stroke="#888888" stroke-width="1.5" marker-end="url(#arrowGray)"/>
+
+  <rect x="544" y="688" width="160" height="64" rx="8" fill="#fff8ef" stroke="#ff9900"/>
+  <text x="624" y="716" font-size="12" font-weight="700" fill="#111111" text-anchor="middle">Glue</text>
+  <text x="624" y="736" font-size="9.5" fill="#777777" text-anchor="middle">crawler + clean</text>
+
+  <line x1="704" y1="720" x2="764" y2="720" stroke="#888888" stroke-width="1.5" marker-end="url(#arrowGray)"/>
+
+  <rect x="768" y="688" width="160" height="64" rx="8" fill="#fff8ef" stroke="#ff9900"/>
+  <text x="848" y="716" font-size="12" font-weight="700" fill="#111111" text-anchor="middle">Athena</text>
+  <text x="848" y="736" font-size="9.5" fill="#777777" text-anchor="middle">SQL over S3</text>
+
+  <line x1="928" y1="720" x2="988" y2="720" stroke="#888888" stroke-width="1.5" marker-end="url(#arrowGray)"/>
+
+  <rect x="992" y="688" width="160" height="64" rx="8" fill="#fff8ef" stroke="#ff9900"/>
+  <text x="1072" y="716" font-size="12" font-weight="700" fill="#111111" text-anchor="middle">QuickSight</text>
+  <text x="1072" y="736" font-size="9.5" fill="#777777" text-anchor="middle">decision dashboards</text>
+
+  <text x="56" y="786" font-size="10" fill="#777777">local prototype of the same aggregations: analytics/audience_report.py (pandas)</text>
+  <text x="56" y="804" font-size="10" fill="#111111">outputs already driving decisions: US 1.83x follow conversion · followers 60% female · 34.1 follows per 1k likes on speed paints</text>
+
+  <!-- footer -->
+  <text x="40" y="872" font-size="10" fill="#999999">config as code: .ebextensions/healthcheck.config · application-prod.properties · deploy gated on 47 passing tests</text>
+</svg>

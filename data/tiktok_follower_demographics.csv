@@ -1,0 +1,14 @@
+dimension,segment,share_pct
+gender,male,40.0
+gender,female,60.0
+gender,other,0.0
+age,18-24,52.6
+age,25-34,34.3
+age,35-44,6.1
+age,45-54,3.5
+age,55+,3.5
+location,United States,25.8
+location,Brazil,5.8
+location,Philippines,5.7
+location,Mexico,3.9
+location,United Kingdom,2.9

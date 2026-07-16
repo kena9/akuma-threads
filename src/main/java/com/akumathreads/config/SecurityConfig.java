@@ -81,7 +81,8 @@ public class SecurityConfig {
                     "/forgot-password", "/reset-password",
                     "/css/**", "/js/**", "/img/**", "/images/**", "/manifest.webmanifest",
                     "/stripe/webhook",
-                    "/webjars/**", "/error"
+                    "/webjars/**", "/error",
+                    "/actuator/health"
                 ).permitAll()
                 // Discount validation — authenticated users only (already covered by anyRequest but explicit here)
                 .requestMatchers("/api/discount/validate").authenticated()
@@ -169,7 +170,23 @@ public class SecurityConfig {
     }
 
     /**
-     * Sets SameSite=Strict on the JSESSIONID cookie at the Tomcat level.
+     * Sets SameSite=Lax on the JSESSIONID cookie at the Tomcat level.
+     *
+     * <p><strong>Why Lax and not Strict:</strong> Strict omits the cookie on ALL
+     * top-level navigations from external origins. Two flows this app depends on
+     * break under Strict:
+     * <ol>
+     *   <li>Stripe redirect-based payment methods — {@code automatic_payment_methods}
+     *       is enabled, so methods like Cash App Pay and some 3DS bank flows return
+     *       the customer via a top-level redirect from stripe.com. Under Strict the
+     *       session cookie is not sent on that return: the customer lands logged out,
+     *       {@code pendingOrderId} is unreachable, and the order is orphaned.</li>
+     *   <li>Links in transactional emails ("VIEW MY ORDER") — clicking from Gmail is
+     *       a cross-site top-level navigation; Strict makes every email link appear
+     *       logged out.</li>
+     * </ol>
+     * Lax still withholds the cookie on cross-site subresource requests and
+     * cross-site POSTs, and CSRF tokens cover state-changing requests.
      *
      * <p>Note: also set {@code server.servlet.session.cookie.secure=true} in
      * {@code application-prod.properties} so the Secure flag is only active
@@ -179,7 +196,7 @@ public class SecurityConfig {
     public TomcatContextCustomizer sameSiteCookieCustomizer() {
         return (Context context) -> {
             Rfc6265CookieProcessor cookieProcessor = new Rfc6265CookieProcessor();
-            cookieProcessor.setSameSiteCookies(SameSiteCookies.STRICT.getValue());
+            cookieProcessor.setSameSiteCookies(SameSiteCookies.LAX.getValue());
             context.setCookieProcessor(cookieProcessor);
         };
     }

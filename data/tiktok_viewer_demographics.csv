@@ -1,0 +1,9 @@
+dimension,segment,share_pct
+gender,male,50.0
+gender,female,49.0
+gender,other,1.0
+location,United States,14.1
+location,Philippines,8.8
+location,Mexico,7.1
+location,Brazil,5.5
+location,Canada,5.1
