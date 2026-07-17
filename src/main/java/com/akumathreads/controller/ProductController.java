@@ -91,9 +91,26 @@ public class ProductController {
             model.addAttribute("nextEditionNumber", soldCount + 1);
         }
 
-        // ── OG meta tags ──────────────────────────────────────────────────────
+        // ── Gallery images ────────────────────────────────────────────────────
+        // Build an ordered list: hero first, then additional images from Printful.
+        // The template iterates this list to render the thumbnail strip.
+        List<String> galleryImages = new java.util.ArrayList<>();
         if (product.getImageUrl() != null) {
-            model.addAttribute("ogImage", product.getImageUrl());
+            galleryImages.add(product.getImageUrl());
+        }
+        if (product.getAdditionalImages() != null && !product.getAdditionalImages().isBlank()) {
+            for (String url : product.getAdditionalImages().split(",")) {
+                String trimmed = url.trim();
+                if (!trimmed.isEmpty() && !galleryImages.contains(trimmed)) {
+                    galleryImages.add(trimmed);
+                }
+            }
+        }
+        model.addAttribute("galleryImages", galleryImages);
+
+        // ── OG meta tags ──────────────────────────────────────────────────────
+        if (!galleryImages.isEmpty()) {
+            model.addAttribute("ogImage", galleryImages.get(0));
         }
         model.addAttribute("ogDescription",
                 product.getName() + " — Original anime art on premium clothing by @oliver_jin_wang. " +

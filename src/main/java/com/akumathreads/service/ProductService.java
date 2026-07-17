@@ -223,6 +223,7 @@ public class ProductService {
         product.setDescription(form.getDescription());
         product.setCategory(form.getCategory());
         product.setImageUrl(form.getImageUrl());
+        product.setAdditionalImages(form.getAdditionalImages());
         product.setDropDate(form.getDropDate());
         product.setEditionSize(form.getEditionSize());
 
@@ -274,6 +275,7 @@ public class ProductService {
         dto.setDescription(product.getDescription());
         dto.setCategory(product.getCategory());
         dto.setImageUrl(product.getImageUrl());
+        dto.setAdditionalImages(product.getAdditionalImages());
         dto.setDropDate(product.getDropDate());
         dto.setEditionSize(product.getEditionSize());
 

@@ -17,8 +17,10 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.SequencedSet;
 
 /**
  * Printful fulfillment API integration.
@@ -256,6 +258,13 @@ public class PrintfulService {
             JsonNode productNode = result.path("sync_product");
             JsonNode variantsNode = result.path("sync_variants");
 
+            // Collect unique mockup preview URLs across all variants (insertion-ordered, deduped)
+            SequencedSet<String> imageUrls = new LinkedHashSet<>();
+            String thumbnailUrl = productNode.path("thumbnail_url").asText(null);
+            if (thumbnailUrl != null && !thumbnailUrl.isBlank()) {
+                imageUrls.add(thumbnailUrl);
+            }
+
             List<SyncVariant> variants = new ArrayList<>();
             if (variantsNode.isArray()) {
                 for (JsonNode v : variantsNode) {
@@ -271,13 +280,25 @@ public class PrintfulService {
                             v.path("synced").asBoolean(false),
                             v.path("retail_price").asText("0.00")
                     ));
+
+                    // Each variant's files array contains mockup/preview images
+                    JsonNode files = v.path("files");
+                    if (files.isArray()) {
+                        for (JsonNode file : files) {
+                            String previewUrl = file.path("preview_url").asText(null);
+                            if (previewUrl != null && !previewUrl.isBlank()) {
+                                imageUrls.add(previewUrl);
+                            }
+                        }
+                    }
                 }
             }
 
             return new SyncProductDetail(
                     productNode.path("id").asLong(),
                     productNode.path("name").asText(),
-                    productNode.path("thumbnail_url").asText(null),
+                    thumbnailUrl,
+                    List.copyOf(imageUrls),
                     variants
             );
 
@@ -395,11 +416,18 @@ public class PrintfulService {
             String  retailPrice
     ) {}
 
-    /** Full detail for one Printful sync product including all variants. */
+    /**
+     * Full detail for one Printful sync product including all variants and images.
+     *
+     * <p>{@code imageUrls} is an ordered, deduplicated list of preview/mockup URLs
+     * collected from the sync product thumbnail and every variant's {@code files} array.
+     * The first entry is used as the hero image; the rest populate the gallery strip.
+     */
     public record SyncProductDetail(
-            Long             id,
-            String           name,
-            String           thumbnailUrl,
+            Long              id,
+            String            name,
+            String            thumbnailUrl,
+            List<String>      imageUrls,
             List<SyncVariant> syncVariants
     ) {}
 }

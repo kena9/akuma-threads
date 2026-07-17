@@ -102,6 +102,14 @@ public class Product extends BaseAuditEntity {
 
     private String imageUrl;
 
+    /**
+     * Comma-separated list of additional image URLs (e.g. Printful mockup images per variant).
+     * The first entry is used as a fallback hero image if imageUrl is null.
+     * Stored as plain TEXT so no schema migration is needed for long URL lists.
+     */
+    @Column(columnDefinition = "TEXT")
+    private String additionalImages;
+
     /** Soft-deleted flag. Set by @SQLDelete; never toggled directly in application code. */
     @Column(nullable = false)
     private boolean deleted = false;

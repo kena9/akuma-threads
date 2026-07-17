@@ -74,9 +74,23 @@ function closeLightbox() {
   document.body.style.overflow = '';
 }
 
-function switchThumb(btn) {
-  var img = btn.querySelector('img');
-  if (img) document.getElementById('main-product-img').src = img.src;
+/**
+ * Switches the hero image to the selected thumbnail.
+ * @param {HTMLElement} btn  - the thumb button that was clicked
+ * @param {string}      url  - the full image URL passed from th:onclick
+ */
+function switchThumb(btn, url) {
+  // Update hero image src
+  var main = document.getElementById('main-product-img');
+  if (main && url) main.src = url;
+
+  // Move active border to clicked thumb
+  document.querySelectorAll('.thumb-btn').forEach(function(b) {
+    b.classList.remove('border-[#e50914]');
+    b.classList.add('border-transparent');
+  });
+  btn.classList.remove('border-transparent');
+  btn.classList.add('border-[#e50914]');
 }
 
 function openSizeGuide() {

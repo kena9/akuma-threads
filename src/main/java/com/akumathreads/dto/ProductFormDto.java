@@ -39,8 +39,14 @@ public class ProductFormDto {
     @NotNull(message = "Category is required")
     private Product.Category category;
 
-    /** Direct URL to the product image (Printify CDN or static asset path). */
+    /** Direct URL to the product image (Printful CDN or static asset path). */
     private String imageUrl;
+
+    /**
+     * Comma-separated additional image URLs (Printful mockup images).
+     * Stored as-is in the Product entity's additionalImages column.
+     */
+    private String additionalImages;
 
     // ── Per-size stock quantities ─────────────────────────────────────────────
 

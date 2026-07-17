@@ -100,8 +100,20 @@ public class PrintfulAdminController {
         form.setName(productName.isBlank() ? detail.name() : productName);
         form.setPrice(price);
         form.setCategory(category);
-        form.setImageUrl(imageUrl != null && !imageUrl.isBlank()
-                         ? imageUrl : detail.thumbnailUrl());
+
+        // Hero image: admin override → Printful thumbnail → first mockup image
+        String heroImage = (imageUrl != null && !imageUrl.isBlank()) ? imageUrl
+                : !detail.imageUrls().isEmpty() ? detail.imageUrls().get(0)
+                : detail.thumbnailUrl();
+        form.setImageUrl(heroImage);
+
+        // Additional images: all Printful mockup URLs except the hero, joined as CSV
+        if (detail.imageUrls().size() > 1) {
+            String additional = detail.imageUrls().stream()
+                    .skip(1)
+                    .collect(java.util.stream.Collectors.joining(","));
+            form.setAdditionalImages(additional);
+        }
         form.setDescription(description);
 
         // Map Printful sync variant IDs by size
