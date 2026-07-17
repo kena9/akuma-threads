@@ -76,15 +76,12 @@ function closeLightbox() {
 
 /**
  * Switches the hero image to the selected thumbnail.
- * @param {HTMLElement} btn  - the thumb button that was clicked
- * @param {string}      url  - the full image URL passed from th:onclick
+ * URL is read from data-img (Thymeleaf 3.1 blocks string variables in onclick).
  */
 function switchThumb(btn, url) {
-  // Update hero image src
   var main = document.getElementById('main-product-img');
   if (main && url) main.src = url;
 
-  // Move active border to clicked thumb
   document.querySelectorAll('.thumb-btn').forEach(function(b) {
     b.classList.remove('border-[#e50914]');
     b.classList.add('border-transparent');
@@ -92,6 +89,12 @@ function switchThumb(btn, url) {
   btn.classList.remove('border-transparent');
   btn.classList.add('border-[#e50914]');
 }
+
+// Delegated click listener — reads URL from data-img attribute
+document.addEventListener('click', function(e) {
+  var btn = e.target.closest('.thumb-btn');
+  if (btn) switchThumb(btn, btn.dataset.img);
+});
 
 function openSizeGuide() {
   document.getElementById('size-guide-modal').classList.add('open');

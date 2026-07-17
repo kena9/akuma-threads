@@ -78,7 +78,7 @@
       <!-- Thumbnail strip — one thumb per gallery image, loops from Printful mockups -->
       <div th:if="${not #lists.isEmpty(galleryImages)}" class="flex gap-px border-t overflow-x-auto" style="background:var(--ot-border);border-color:var(--ot-border);">
         <button th:each="img, stat : ${galleryImages}"
-                th:onclick="|switchThumb(this, '${img}')|"
+                th:data-img="${img}"
                 th:class="${stat.first} ? 'thumb-btn w-20 h-20 overflow-hidden flex-shrink-0 border-2 border-[#e50914] transition-all duration-200' : 'thumb-btn w-20 h-20 overflow-hidden flex-shrink-0 border-2 border-transparent transition-all duration-200'"
                 style="background:var(--ot-surface);">
           <img th:src="${img}" th:alt="${product.name + ' image ' + stat.index}" class="w-full h-full object-cover opacity-80"/>
